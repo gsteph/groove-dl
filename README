@@ -1,0 +1,12 @@
+====================Jacktheripper's Grooveshark Downloader====================
+
+A downloader to Grooveshark's awesome music library. Based off the wiki at
+http://nettech.wikia.com/wiki/Grooveshark_Internal_API.
+
+For now, only a python version is available.
+A firefox plugin version is planned.
+
+I'm not responsible for any violations this script does to Grooveshark's
+TOS. It's more of a proof of concept.
+
+Python script by jacktheripper <gaf.stephanos@gmail.com>
