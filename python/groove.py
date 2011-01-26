@@ -14,8 +14,6 @@ _useragent = "Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.
 _token = None
 
 h = {}
-h["client"] = "htmlshark"
-h["clientRevision"] = "20100831"
 h["Country"] = {}
 h["Country"]["CC1"] = "0"
 h["Country"]["CC2"] = "0"
@@ -37,6 +35,8 @@ def getToken():
     p["parameters"]["secretKey"] = hashlib.md5(h["session"]).hexdigest()
     p["method"] = "getCommunicationToken"
     p["header"] = h
+    p["header"]["client"] = "htmlshark"
+    p["header"]["clientRevision"] = "20100831"
     headers={"User-Agent": _useragent, "Content-Type":"", "Cookie":"PHPSESSID=" + h["session"]}
     conn = httplib.HTTPSConnection("retrocowbell.grooveshark.com")
     conn.request("POST", "/service.php", json.JSONEncoder().encode(p))
@@ -50,10 +50,11 @@ def getSearchResultsEx(query, type="Songs"):
     p["parameters"]["offset"] = 1
     p["parameters"]["type"] = type
     p["parameters"]["query"] = query
-    p["method"] = "getSearchResultsEx"
     p["header"] = h
+    p["header"]["client"] = "htmlshark"
+    p["header"]["clientRevision"] = "20100831"
     p["header"]["token"] = prepToken("getSearchResultsEx")
-
+    p["method"] = "getSearchResultsEx"
     headers={"User-Agent": _useragent, "Content-Type":"", "Cookie":"PHPSESSID=" + h["session"]}
     conn = httplib.HTTPConnection("listen.grooveshark.com")
     conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p))
