@@ -24,6 +24,11 @@ h["privacy"] = 0
 h["session"] = None
 h["uuid"] = str(uuid.uuid4())
 
+entrystring = \
+"""A Grooveshark song downloader in python
+by George Stephanos <gaf.stephanos@gmail.com>
+"""
+
 def prepToken(method):
     rnd = (''.join(random.choice(string.hexdigits) for x in range(6))).lower()
     return rnd + hashlib.sha1(method + ":" + _token + ":quitStealinMahShit:" + rnd).hexdigest()
@@ -96,8 +101,13 @@ def init():
     h["session"] = cookie[0][10:]
 
 if __name__ == "__main__":
+    print entrystring
     if len(sys.argv) < 2:
-        print "Query Required"
+        print "Arguments Required"
+        exit()
+    elif sys.argv[1] == "--gui":
+        import gui
+        gui.main()
         exit()
     init()
     getToken()
@@ -108,7 +118,7 @@ if __name__ == "__main__":
         print str(m) + ': "' + l["SongName"] + '" by "' + l["ArtistName"] + '" (' + l["AlbumName"] + ')'
         if m == 10: break
     songid = raw_input("Enter the Song ID you wish to download or (q) to exit: ")
-    if songid == None or songid == "q": exit()
+    if songid == "" or songid == "q": exit()
     songid = eval(songid)
     stream = getStreamKeyFromSongIDEx(s[songid]["SongID"])
     s =  'wget --post-data=streamKey=%s -O "%s - %s.mp3" "http://%s/stream.php"' % (stream["result"]["streamKey"], s[songid]["ArtistName"], s[songid]["SongName"], stream["result"]["ip"])

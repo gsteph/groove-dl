@@ -1,4 +1,4 @@
-================================Jacktheripper's Grooveshark Downloader================================
+===========================Jacktheripper's Grooveshark Downloader===========================
 
 A downloader to Grooveshark's awesome music library. Based off the wiki at
 http://nettech.wikia.com/wiki/Grooveshark_Internal_API.
@@ -9,11 +9,13 @@ Dependencies:
 For GUI:
 		2) wxPython (http://www.wxpython.org)
 		3) ObjectListView (http://objectlistview.sourceforge.net/python)
+If you're a windows user that doesn't have python, nor know what it is, 
+you could just install groove-dl_*.*all.exe from the downloads section. 
+If you're a linux user however, you have to do it the right way.
+
+Run `groove.py "search query"` or `groove.py --gui` if GUI is needed.
 
 I'm not responsible for any violations this script does to Grooveshark's TOS. It's more of a
 proof of concept.
 
 Python script by George Stephanos <gaf.stephanos@gmail.com>
-
-Run python/groove.py for CLI or python/ui.py for GUI.
-Note: ui.py depends on groove.py so you still need to have both if you plan on running just GUI.

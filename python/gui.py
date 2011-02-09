@@ -8,7 +8,9 @@ import os
 from ObjectListView import ObjectListView, ColumnDefn
 
 def SetStatus(frame, event): frame.frame_statusbar.SetStatusText(event.attr1)
-def EnableFrame(frame, event): frame.Enable(event.attr1)
+def EnableFrame(frame, event): 
+  frame.txt_query.Enable(event.attr1)
+  frame.cb_type.Enable(event.attr1)
 def ClearResults(frame, event): frame.lst_results.DeleteAllItems() if frame.lst_results.GetItemCount() > 0 else None
 def ShowDownloader(frame, event):
     frame.lst_downloads.Show(event.attr1)
@@ -37,6 +39,7 @@ class MyFrame(wx.Frame):
         self.lst_results = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.lst_downloads = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.frame_statusbar = self.CreateStatusBar(1, wx.SB_RAISED)
+        self.cb_type.Show(False)
         self.__set_properties()
         self.__do_layout()
         self.Bind(EVT_EXEC_FUNC, self._ExecFunc)
@@ -139,11 +142,14 @@ class t_download(threading.Thread):
         self.cancelled = False
     def run(self):
         key = groove.getStreamKeyFromSongIDEx(self.songid)
+        try: os.mkdir("Downloads") 
+        except: pass
         try:
-            urllib.urlretrieve("http://" + key["result"]["ip"] + "/stream.php", self.download["filename"], self.hook, "streamKey="+key["result"]["streamKey"])
+            
+            urllib.urlretrieve("http://" + key["result"]["ip"] + "/stream.php", "Downloads/" + self.download["filename"], self.hook, "streamKey="+key["result"]["streamKey"])
         except Exception, ex:
             if ex.args[0] == "Cancelled":
-                os.remove(self.download["filename"])
+                os.remove("Downloads/" + self.download["filename"])
             else:
                 print ex
     def hook(self, countBlocks, Block, TotalSize):
@@ -180,12 +186,11 @@ class t_init(threading.Thread):
         wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
         wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
 
-if __name__ == "__main__":
+def main():
     app = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()
     frame = MyFrame(None, -1, "")
     app.SetTopWindow(frame)
-
     init_thread = t_init(frame)
     init_thread.start()
     frame.Show()
