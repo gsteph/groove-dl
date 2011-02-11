@@ -5,6 +5,7 @@ import groove
 import threading
 import urllib
 import os
+import ConfigParser
 from ObjectListView import ObjectListView, ColumnDefn
 
 def SetStatus(frame, event): frame.frame_statusbar.SetStatusText(event.attr1)
@@ -19,9 +20,9 @@ def UpdateItem(frame, event):
     frame.lst_downloads.RefreshObject(event.attr1)
 
 evtExecFunc, EVT_EXEC_FUNC = wx.lib.newevent.NewEvent()
-
 ID_DOWNLOAD = wx.NewId()
 ID_REMOVE = wx.NewId()
+dest = "Songs"
 
 def strip(value, deletechars):
     for c in deletechars:
@@ -63,19 +64,16 @@ class MyFrame(wx.Frame):
         columns = [
         ColumnDefn("Title", "left", 0, valueGetter = "SongName", isSpaceFilling=True),
         ColumnDefn("Album", "center", 0, valueGetter = "AlbumName", isSpaceFilling=True),
-        ColumnDefn("Artist", "center", 0, valueGetter = "ArtistName", isSpaceFilling=True)
-        ]
+        ColumnDefn("Artist", "center", 0, valueGetter = "ArtistName", isSpaceFilling=True)]
         columns[0].freeSpaceProportion = 2
         columns[1].freeSpaceProportion = columns[2].freeSpaceProportion = 1
         self.lst_results.SetColumns(columns)
         self.lst_results.SetObjects(self.results)
         self.lst_results.SetEmptyListMsg("Type into above text field to search.")
         self.lst_results._ResizeSpaceFillingColumns()
-        self.lst_results.SortBy(0)
         columns = [
         ColumnDefn("Title", "left", 160, valueGetter = "filename", isSpaceFilling=True),
-        ColumnDefn("Progress", "center", 160, valueGetter = "progress")
-        ]
+        ColumnDefn("Progress", "center", 160, valueGetter = "progress")]
         self.lst_downloads.SetColumns(columns)
         self.lst_downloads.SetObjects(self.downloads)
         self.lst_downloads.SetEmptyListMsg("N/A")
@@ -142,14 +140,13 @@ class t_download(threading.Thread):
         self.cancelled = False
     def run(self):
         key = groove.getStreamKeyFromSongIDEx(self.songid)
-        try: os.mkdir("Downloads") 
+        try: os.makedirs(dest)
         except: pass
         try:
-            
-            urllib.urlretrieve("http://" + key["result"]["ip"] + "/stream.php", "Downloads/" + self.download["filename"], self.hook, "streamKey="+key["result"]["streamKey"])
+            urllib.urlretrieve("http://" + key["result"]["ip"] + "/stream.php", dest + "/" + self.download["filename"], self.hook, "streamKey="+key["result"]["streamKey"])
         except Exception, ex:
             if ex.args[0] == "Cancelled":
-                os.remove("Downloads/" + self.download["filename"])
+                os.remove(dest + "/" + self.download["filename"])
             else:
                 print ex
     def hook(self, countBlocks, Block, TotalSize):
@@ -187,6 +184,14 @@ class t_init(threading.Thread):
         wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
 
 def main():
+    global dest
+    config = ConfigParser.RawConfigParser()
+    if not os.path.exists("settings.ini"):
+        config.add_section("groove-dl")
+        config.set("groove-dl", "dest", dest)
+        config.write(open("settings.ini", "wb"))
+    config.read("settings.ini")
+    dest = config.get("groove-dl", "dest")
     app = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()
     frame = MyFrame(None, -1, "")
