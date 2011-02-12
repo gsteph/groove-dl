@@ -103,9 +103,6 @@ def init():
 if __name__ == "__main__":
     print entrystring
     if len(sys.argv) < 2:
-        print "Arguments Required"
-        exit()
-    elif sys.argv[1] == "--gui":
         import gui
         gui.main()
         exit()
