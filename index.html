@@ -17,7 +17,7 @@
       margin: 0 auto;
       width: 700px;
     }
-		h1 { font-size: 60px; color: #000000; margin-bottom: 3px; }
+		h1 { font-size: 30px; color: #000000; font-family: "Terminal"; }
 		h1 .small { font-size: 12px; }
 		h1 a { text-decoration: none }
 		h2 { font-size: 15px; color: #000000; }
@@ -53,14 +53,14 @@
         <img border="0" width="90" src="http://github.com/images/modules/download/tar.png"></a>
     </div>
 -->
-	<h1><a href="http://github.com/jacktheripper51/groove-dl">groove-dl</a>
-	<span class="small">by <a href="http://github.com/jacktheripper51">George Stephanos</a></span></h1>
+	<h1 style="padding-top: 20px; text-align: center;"><a href="http://github.com/jacktheripper51/groove-dl"><img src=groove.png style="vertical-align: middle">   JTR's Grooveshark Downloader</a><br>
+	<span class="small" style="padding-left: 400px">by <a href="http://github.com/jacktheripper51">George Stephanos</a> (who is JTR)</span></h1>
 	<div class="description">
 		 A <a href="http://listen.grooveshark.com">
 		<img src="groove_logo.png" alt='Grooveshark' style="vertical-align: middle;"></a> song downloader in Python
 	</div>
 	<p>
-		What makes this different you say ? It's really simple and pretty quick!
+		It's a great way to download music, if you don't know what Grooveshark is.
 	</p>
 	<h2>Dependencies</h2>
 	<p class="indented">
@@ -68,7 +68,16 @@
 		 wxPython v2.8 (<a href="http://www.wxpython.org">http://www.wxpython.org</a>)<br>
 		 ObjectListView v1.2 (<a href="http://objectlistview.sourceforge.net/python">http://objectlistview.sourceforge.net/python/</a>)
 	</p>
-	<h2>Install</h2>
+	<h2 id="downloads">Downloads</h2>
+	<p class="indented">
+		 Whole bundles:<br>
+		<ul>
+            <li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.92all.exe">groove-dl_0.92</a></li>
+			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.91all.exe">groove-dl_0.91</a></li>
+			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.90all.exe">groove-dl_0.90</a></li>
+		</ul>
+	</p>
+	<h2>Installation</h2>
 	<p class="indented">
 		<subh2>Windows users:</subh2><br>
 		I have provided self-extracting 7-zip executables containing all dependencies. So you just need to:
@@ -77,7 +86,7 @@
 		<li>Run the file downloaded</li>
 		<li>Choose a directory, click Extract</li>
 		<li>Read readme.txt</li>
-		<li>Run groove-dl.exe</li>
+		<li>Run groove.exe</li>
 	</ul>
 	<p class="indented">
 		Simple enough ?<br>
@@ -88,17 +97,15 @@
 	<ul>
 		<li>Installing dependencies:<br>
 		<ul>
-			<li>Grabbing latest python.</li>
-			<li>Installing latest wxPython</li>
-			<li>Getting OLV from its site and running
+			<li>Grabbing latest Python (2.x) .</li>
+			<li>Installing latest wxPython.</li>
+			<li>Getting OLV from its site and running:
     			<pre>sudo setup.py install</pre>
 			</li>
 		</ul>
 		</li>
 		<li>Downloading my two scripts from git (gui.py and groove.py)</li>
-		<li>Executing:
-		    <pre>groove.py --gui</pre>
-		</li>
+		<li>Executing groove.py.</li>
 	</ul>
 	<p class="indented">
 		Should be very obvious to a linux user.<br><br>
@@ -106,20 +113,15 @@
 		I have no idea.</p>
 	<h2>Authors</h2>
 	<p class="indented">
-		George Stephanos &lt;gaf.stephanos@gmail.com&gt;<br>
-		 Most credits to this <a href="http://nettech.wikia.com/wiki/Grooveshark_Internal_API">protocol wiki</a> though. But still!<br>
-		 Questions/Suggestions should be directed right to the email given above.
-	</p>
-	<h2>Download</h2>
-	<p class="indented">
-		 Whole bundles:<br>
-		<ul>
-			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.91all.exe">groove-dl_0.91</a> (Latest)</li>
-			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.90all.exe">groove-dl_0.90</a></li>
-		</ul>
+        George Stephanos &lt;gaf.stephanos@gmail.com&gt;<br>
+        Most credits to this <a href="http://nettech.wikia.com/wiki/Grooveshark_Internal_API">protocol wiki</a> though. But still!<br>
+        Questions/Suggestions should be directed right to the email given above.
 	</p>
 	<div class="footer">
 		 get the source code on GitHub : <a href="http://github.com/jacktheripper51/groove-dl">jacktheripper51/groove-dl</a>
+	</div>
+	<div style="text-align: center; font-size: 5px; font-style: italic;">
+         Please excuse me for such a hideous web page. It's my first. A puny attempt at HTML and CSS.
 	</div>
 </div>
 </body>
