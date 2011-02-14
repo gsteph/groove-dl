@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding=utf-8 -*-
 import wx
 import wx.lib.newevent
 import groove
