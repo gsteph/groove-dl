@@ -9,6 +9,7 @@ import string
 import sys
 import os
 import subprocess
+import gzip
 
 _useragent = "Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1"
 _token = None
@@ -42,17 +43,13 @@ def getToken():
     p["header"] = h
     p["header"]["client"] = "htmlshark"
     p["header"]["clientRevision"] = "20100831"
-    headers={"User-Agent": _useragent, "Content-Type":"", "Cookie":"PHPSESSID=" + h["session"]}
     conn = httplib.HTTPSConnection("retrocowbell.grooveshark.com")
-    conn.request("POST", "/service.php", json.JSONEncoder().encode(p))
-    res = conn.getresponse()
-    _token = json.JSONDecoder().decode(res.read())["result"]
+    conn.request("POST", "/service.php", json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
+    _token = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]
 
 def getSearchResultsEx(query, type="Songs"):
     p = {}
     p["parameters"] = {}
-    p["parameters"]["limit"] = 25
-    p["parameters"]["offset"] = 1
     p["parameters"]["type"] = type
     p["parameters"]["query"] = query
     p["header"] = h
@@ -60,13 +57,9 @@ def getSearchResultsEx(query, type="Songs"):
     p["header"]["clientRevision"] = "20100831"
     p["header"]["token"] = prepToken("getSearchResultsEx")
     p["method"] = "getSearchResultsEx"
-    headers={"User-Agent": _useragent, "Content-Type":"", "Cookie":"PHPSESSID=" + h["session"]}
     conn = httplib.HTTPConnection("listen.grooveshark.com")
-    conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p))
-    res = conn.getresponse()
-    result = json.JSONDecoder().decode(res.read())
-    result = result["result"]["result"]
-    return result
+    conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
+    return json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]["result"]
 
 def getStreamKeyFromSongIDEx(id):
     p = {}
@@ -80,12 +73,9 @@ def getStreamKeyFromSongIDEx(id):
     p["header"]["clientRevision"] = "20101012.37"
     p["header"]["token"] = prepToken("getStreamKeyFromSongIDEx")
     p["method"] = "getStreamKeyFromSongIDEx"
-
-    headers={"User-Agent": _useragent, "Content-Type":"", "Cookie":"PHPSESSID=" + h["session"]}
     conn = httplib.HTTPConnection("listen.grooveshark.com")
-    conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p))
-    res = conn.getresponse()
-    return json.JSONDecoder().decode(res.read())
+    conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
+    return json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())
 
 def header_cb(buf):
     global h

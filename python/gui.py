@@ -15,13 +15,13 @@ def SetStatus(frame, event): frame.frame_statusbar.SetStatusText(event.attr1)
 def EnableFrame(frame, event):
     frame.txt_query.Enable(event.attr1)
     frame.cb_type.Enable(event.attr1)
-    frame.txt_query.SetFocus()
 def ClearResults(frame, event): frame.lst_results.DeleteAllItems() if frame.lst_results.GetItemCount() > 0 else None
 def ShowDownloader(frame, event):
     frame.lst_downloads.Show(event.attr1)
     frame.sizer_1.Layout()
 def UpdateItem(frame, event):
     frame.lst_downloads.RefreshObject(event.attr1)
+def SetFocus(frame, event): event.attr1.SetFocus()
 
 evtExecFunc, EVT_EXEC_FUNC = wx.lib.newevent.NewEvent()
 ID_DOWNLOAD = wx.NewId()
@@ -81,6 +81,7 @@ class MyFrame(wx.Frame):
         self.lst_results.SetObjects(self.results)
         self.lst_results.SetEmptyListMsg("Type into above text field to search.")
         self.lst_results._ResizeSpaceFillingColumns()
+        self.lst_results.useAlternateBackColors = False
         columns = [
         ColumnDefn("Title", "left", 160, valueGetter = "filename", isSpaceFilling=True),
         ColumnDefn("Estimated Bitrate", "center", 110, valueGetter = "bitrate"),
@@ -91,6 +92,7 @@ class MyFrame(wx.Frame):
         self.lst_downloads.SetObjects(self.downloads)
         self.lst_downloads.SetEmptyListMsg("N/A")
         self.lst_downloads.SortBy(0)
+        self.lst_downloads.useAlternateBackColors = False
         for i in range(len(frame_statusbar_fields)):
             self.frame_statusbar.SetStatusText(frame_statusbar_fields[i], i)
         self.frame_statusbar.SetStatusStyles([wx.SB_FLAT])
@@ -170,12 +172,14 @@ class t_download(threading.Thread):
             if ex.args[0] == "Cancelled":
                 os.remove(dest + "/" + self.download["filename"])
             else:
-                print ex
+                raise ex
     def hook(self, countBlocks, Block, TotalSize):
         if self.cancelled: raise Exception("Cancelled")
         progress = float(countBlocks*Block) / float(TotalSize) * 100
+        if countBlocks == 0:
+            if self.duration != 0: self.download["bitrate"] = "%ukbps" % (TotalSize*8 / self.duration / 1000)
+            else: self.download["bitrate"] = "Failed"
         self.download["progress"] = "%.0f%%" % progress if progress < 100 else "Completed"
-        self.download["bitrate"] = "%ukbps" % (TotalSize*8 / self.duration / 1000)
         if time.clock() - self.t > 0.2:
             self.download["size"] = "%.02f/%.02f MB" % (float(countBlocks*Block) / 1024**2, float(TotalSize) / 1024**2)
             self.download["speed"] = "%.02f KB/s" % ((countBlocks - self.lastCount)*Block / (time.clock() - self.t) / 1024)
@@ -184,7 +188,6 @@ class t_download(threading.Thread):
         if countBlocks*Block >= TotalSize:
             self.download["size"] = "%.02f/%.02f MB" % (float(TotalSize) / 1024**2, float(TotalSize) / 1024**2)
             self.download["speed"] = self.download["speed"] = "~%.02f KB/s" % (countBlocks*Block / (time.clock() - self.beg) / 1024)
-            
         wx.PostEvent(self.frame, evtExecFunc(func=UpdateItem, attr1=self.download))
 
 class t_search(threading.Thread):
@@ -201,7 +204,8 @@ class t_search(threading.Thread):
         wx.PostEvent(self.frame, evtExecFunc(func=f))
         wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
         wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
-
+        wx.PostEvent(self.frame, evtExecFunc(func=SetFocus, attr1=self.frame.lst_results))
+        
 class t_init(threading.Thread):
     def __init__ (self, _frame):
         threading.Thread.__init__(self)
@@ -217,6 +221,7 @@ class t_init(threading.Thread):
                 groove.getToken()
                 wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
                 wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
+                wx.PostEvent(self.frame, evtExecFunc(func=SetFocus, attr1=self.frame.txt_query))
                 p = 0
             except Exception, e:
                 if e.args[0] == 11004:
