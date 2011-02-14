@@ -13,7 +13,7 @@ If you're a windows user that doesn't have python, nor know what it is,
 you could just install groove-dl_*.*all.exe from the downloads section. 
 If you're a linux user however, you have to do it the right way.
 
-Run `groove.py "search query"` or `groove.py --gui` if GUI is needed.
+Run `groove.py "search query"` or just `groove.py` if GUI is needed.
 
 I'm not responsible for any violations this script does to Grooveshark's TOS. It's more of a
 proof of concept.
