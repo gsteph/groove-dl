@@ -1,9 +1,12 @@
 #!/usr/bin/env python
+version = "0.93"
 import wx
 import wx.lib.newevent
+import base64
 import groove
 import threading
 import urllib
+import httplib
 import os
 import sys
 import time
@@ -26,7 +29,12 @@ def SetFocus(frame, event): event.attr1.SetFocus()
 evtExecFunc, EVT_EXEC_FUNC = wx.lib.newevent.NewEvent()
 ID_DOWNLOAD = wx.NewId()
 ID_REMOVE = wx.NewId()
-dest = "Songs"
+if sys.platform == 'win32': 
+    dest = os.getenv('USERPROFILE') + "\\My Documents\\My Music"; conf = os.getenv('APPDATA') + "\\groove-dl\\"
+    os.makedirs(conf)
+    sys.stdout = open(conf + "groove-dl.out", "w")
+    sys.stderr = open(conf + "groove-dl.err", "w")
+elif sys.platform == 'linux2': dest = os.getenv('HOME') + '/Music'; conf = ""
 
 def strip(value, deletechars):
     for c in deletechars:
@@ -44,6 +52,7 @@ class MyFrame(wx.Frame):
         self.lbl_query = wx.StaticText(self, -1, "  Query:  ", style=wx.ALIGN_CENTRE)
         self.lbl_query.SetFont(font)
         self.txt_query = wx.TextCtrl(self, 1, "", style=wx.TE_PROCESS_ENTER)
+        self.folder_chooser = wx.Button(self, -1, "Choose Destination", size=[-1, self.txt_query.GetSize().GetHeight()])
         self.lst_results = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.lst_downloads = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.frame_statusbar = self.CreateStatusBar(1, wx.SB_RAISED)
@@ -56,16 +65,18 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._DoubleClick, self.lst_results)
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._DoubleClick, self.lst_downloads)
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self._DownloadsContext, self.lst_downloads)
+        self.Bind(wx.EVT_BUTTON, self._ChooseFolder, self.folder_chooser)
         self.Bind(wx.EVT_CLOSE, self._Close)
         self.menu_results = {}
         self.menu_downloads = {}
         self.menu_results[ID_DOWNLOAD] = "Download"
         self.menu_downloads[ID_REMOVE] = "Remove"
-        icon = wx.Icon("groove.ico", wx.BITMAP_TYPE_ICO)
-        self.SetIcon(icon)
-        del icon
+        if sys.platform == 'win32':
+            self.SetIcon(wx.Icon(sys.executable, wx.BITMAP_TYPE_ICO))
+        else:
+            if os.path.exists("groove.ico"): self.SetIcon(wx.Icon("groove.ico", wx.BITMAP_TYPE_ICO))
     def __set_properties(self):
-        self.SetTitle("JTR's Grooveshark Downloader")
+        self.SetTitle("JTR's Grooveshark Downloader v" + version)
         self.SetSize((600, 400))
         self.cb_type.SetMinSize((100, 23))
         self.cb_type.SetSelection(0)
@@ -102,6 +113,7 @@ class MyFrame(wx.Frame):
         #self.sizer_2.Add(self.cb_type, 0, wx.EXPAND, 0)
         self.sizer_2.Add(self.lbl_query, 0, wx.ALIGN_CENTER, 0)
         self.sizer_2.Add(self.txt_query, 2, 0, 0)
+        self.sizer_2.Add(self.folder_chooser, 0, wx.ALIGN_CENTER, 0)
         self.sizer_1.Add(self.sizer_2, 0, wx.EXPAND, 0)
         self.sizer_1.Add(self.lst_results, 2, wx.EXPAND, 0)
         self.sizer_1.Add(self.lst_downloads, 1, wx.EXPAND, 0)
@@ -149,6 +161,12 @@ class MyFrame(wx.Frame):
                 d["thread"].cancelled = True
             for i in self.lst_downloads.GetSelectedObjects(): self.downloads.remove(i)
             self.lst_downloads.RemoveObjects(self.lst_downloads.GetSelectedObjects())
+    def _ChooseFolder(self, event):
+        global dest
+        dialog = wx.DirDialog(None, "Please choose the destination directory:", os.getenv('USERPROFILE') if sys.platform == 'win32' else os.getenv('HOME'))
+        if dialog.ShowModal() == wx.ID_OK:
+            dest = dialog.GetPath()
+        dialog.Destroy()
     def _Close(self, event):
         os._exit(0)
 
@@ -157,16 +175,17 @@ class t_download(threading.Thread):
         threading.Thread.__init__(self)
         self.frame = frame
         self.songid = song["SongID"]
-        self.duration = int(song["EstimateDuration"])
+        self.duration = float(song["EstimateDuration"])
         self.cancelled = False
     def run(self):
         key = groove.getStreamKeyFromSongIDEx(self.songid)
         try: os.makedirs(dest)
         except: pass
         try:
-            self.t = time.clock()
+            self.t = time.time()
             self.beg = self.t
             self.lastCount = 0
+            print dest
             urllib.urlretrieve("http://" + key["result"]["ip"] + "/stream.php", dest + "/" + self.download["filename"], self.hook, "streamKey="+key["result"]["streamKey"])
         except Exception, ex:
             if ex.args[0] == "Cancelled":
@@ -180,14 +199,14 @@ class t_download(threading.Thread):
             if self.duration != 0: self.download["bitrate"] = "%ukbps" % (TotalSize*8 / self.duration / 1000)
             else: self.download["bitrate"] = "Failed"
         self.download["progress"] = "%.0f%%" % progress if progress < 100 else "Completed"
-        if time.clock() - self.t > 0.2:
+        if time.time() - self.t > 0.2:
             self.download["size"] = "%.02f/%.02f MB" % (float(countBlocks*Block) / 1024**2, float(TotalSize) / 1024**2)
-            self.download["speed"] = "%.02f KB/s" % ((countBlocks - self.lastCount)*Block / (time.clock() - self.t) / 1024)
-            self.t = time.clock()
+            self.download["speed"] = "%.02f KB/s" % ((countBlocks - self.lastCount)*Block / (time.time() - self.t) / 1024)
+            self.t = time.time()
             self.lastCount = countBlocks
         if countBlocks*Block >= TotalSize:
             self.download["size"] = "%.02f/%.02f MB" % (float(TotalSize) / 1024**2, float(TotalSize) / 1024**2)
-            self.download["speed"] = self.download["speed"] = "~%.02f KB/s" % (countBlocks*Block / (time.clock() - self.beg) / 1024)
+            self.download["speed"] = self.download["speed"] = "~%.02f KB/s" % (countBlocks*Block / (time.time() - self.beg) / 1024)
         wx.PostEvent(self.frame, evtExecFunc(func=UpdateItem, attr1=self.download))
 
 class t_search(threading.Thread):
@@ -210,18 +229,30 @@ class t_init(threading.Thread):
     def __init__ (self, _frame):
         threading.Thread.__init__(self)
         self.frame = _frame
+    def update(self):
+        wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Checking for updates..."))
+        conn = httplib.HTTPConnection("www.groove-dl.co.cc")
+        conn.request("GET", "/version")
+        new = conn.getresponse().read()
+        if new != version:
+            dlg = wx.MessageDialog(self.frame, "There is a new version available. Do you wish to update ?", "Update found", wx.YES_NO | wx.ICON_QUESTION)
+            if dlg.ShowModal() == wx.ID_YES:
+                os.rename("updater.exe", "_updater.exe")
+                system("_updater.exe")
+                os._exit(0)
     def run(self):
         p = 1
         while(p):
             try:
                 wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=False))
+                if sys.platform == "win32": self.update()
                 wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Initializing..."))
                 groove.init()
                 wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Getting Token..."))
                 groove.getToken()
-                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
                 wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
                 wx.PostEvent(self.frame, evtExecFunc(func=SetFocus, attr1=self.frame.txt_query))
+                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
                 p = 0
             except Exception, e:
                 if e.args[0] == 11004:
@@ -233,11 +264,11 @@ class t_init(threading.Thread):
 def main():
     global dest
     config = ConfigParser.RawConfigParser()
-    if not os.path.exists("settings.ini"):
+    if not os.path.exists(conf + "settings.ini"):
         config.add_section("groove-dl")
         config.set("groove-dl", "dest", dest)
-        config.write(open("settings.ini", "wb"))
-    config.read("settings.ini")
+        config.write(open(conf + "settings.ini", "wb"))
+    config.read(conf + "settings.ini")
     dest = config.get("groove-dl", "dest")
     app = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()
