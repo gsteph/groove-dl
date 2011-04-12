@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import httplib
 import StringIO
-import json
 import hashlib
 import uuid
 import random
@@ -10,6 +9,8 @@ import sys
 import os
 import subprocess
 import gzip
+if sys.version_info[1] >= 6:  import json
+else: import simplejson
 
 _useragent = "Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1"
 _referer = "http://listen.grooveshark.com/JSQueue.swf?20110216.04"

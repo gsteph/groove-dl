@@ -1,17 +1,31 @@
 #!/usr/bin/env python
-version = "0.93"
+version = "0.94"
+import sys
+import os
+import shutil
+if sys.platform == 'win32': 
+    dest = os.getenv('USERPROFILE') + "\\My Documents\\My Music"; conf = ''
+    try: os.makedirs(conf)
+    except: pass
+    try: 
+        os.remove("_groove.exe")
+        os.remove("_python27.dll")
+        shutil.rmtree("_modules")
+    except: pass
+    sys.stdout = open("groove.exe.out", "w")
+    sys.stderr = open("groove.exe.err", "w")
+elif sys.platform == 'linux2': dest = os.getenv('HOME') + '/Music'; conf = ""
 import wx
 import wx.lib.newevent
 import base64
 import groove
 import threading
-import urllib
 import httplib
-import os
-import sys
 import time
 import subprocess
 import ConfigParser
+import tempfile
+from urllib import urlretrieve
 from ObjectListView import ObjectListView, ColumnDefn
 
 def SetStatus(frame, event): frame.frame_statusbar.SetStatusText(event.attr1)
@@ -29,12 +43,6 @@ def SetFocus(frame, event): event.attr1.SetFocus()
 evtExecFunc, EVT_EXEC_FUNC = wx.lib.newevent.NewEvent()
 ID_DOWNLOAD = wx.NewId()
 ID_REMOVE = wx.NewId()
-if sys.platform == 'win32': 
-    dest = os.getenv('USERPROFILE') + "\\My Documents\\My Music"; conf = os.getenv('APPDATA') + "\\groove-dl\\"
-    os.makedirs(conf)
-    sys.stdout = open(conf + "groove-dl.out", "w")
-    sys.stderr = open(conf + "groove-dl.err", "w")
-elif sys.platform == 'linux2': dest = os.getenv('HOME') + '/Music'; conf = ""
 
 def strip(value, deletechars):
     for c in deletechars:
@@ -168,6 +176,8 @@ class MyFrame(wx.Frame):
             dest = dialog.GetPath()
         dialog.Destroy()
     def _Close(self, event):
+        sys.stdout.close()
+        sys.stderr.close()
         os._exit(0)
 
 class t_download(threading.Thread):
@@ -186,7 +196,7 @@ class t_download(threading.Thread):
             self.beg = self.t
             self.lastCount = 0
             print dest
-            urllib.urlretrieve("http://" + key["result"]["ip"] + "/stream.php", dest + "/" + self.download["filename"], self.hook, "streamKey="+key["result"]["streamKey"])
+            urlretrieve("http://" + key["result"]["ip"] + "/stream.php", dest + "/" + self.download["filename"], self.hook, "streamKey="+key["result"]["streamKey"])
         except Exception, ex:
             if ex.args[0] == "Cancelled":
                 os.remove(dest + "/" + self.download["filename"])
@@ -229,16 +239,29 @@ class t_init(threading.Thread):
     def __init__ (self, _frame):
         threading.Thread.__init__(self)
         self.frame = _frame
+    def updatehook(self, countBlocks, Block, TotalSize):
+        wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Downloading v%s - %%%s..." % (self.new,int(float(countBlocks*Block)/TotalSize*100))))
     def update(self):
         wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Checking for updates..."))
         conn = httplib.HTTPConnection("www.groove-dl.co.cc")
         conn.request("GET", "/version")
-        new = conn.getresponse().read()
-        if new != version:
+        self.new = conn.getresponse().read()
+        if self.new != version:
             dlg = wx.MessageDialog(self.frame, "There is a new version available. Do you wish to update ?", "Update found", wx.YES_NO | wx.ICON_QUESTION)
             if dlg.ShowModal() == wx.ID_YES:
-                os.rename("updater.exe", "_updater.exe")
-                system("_updater.exe")
+                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Downloading v%s..." % self.new))
+                filename = urlretrieve("https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_%sall.exe" % self.new, reporthook=self.updatehook)[0]
+                newfile = filename+"tmp.exe"
+                o = open(newfile, "wb")
+                for l in open(filename, "rb"):                                         ### Hack to replace the extract path
+                    if "InstallPath" in l:                                              ### to the current directory
+                        l = l[:12] + '"' + os.getcwd().replace('\\', '\\\\') + '"\n'  ### because the functionality doesn't
+                    o.write(l)                                                          ### exist yet in 7zsfx through CLI
+                o.close()
+                os.rename("groove.exe", "_groove.exe")
+                os.rename("modules", "_modules")
+                os.rename("python27.dll", "_python27.dll")
+                subprocess.Popen([newfile, '-ai', '-gm2', '-y'])
                 os._exit(0)
     def run(self):
         p = 1
