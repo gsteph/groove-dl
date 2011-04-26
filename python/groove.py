@@ -13,7 +13,7 @@ if sys.version_info[1] >= 6:  import json
 else: import simplejson
 
 _useragent = "Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1"
-_referer = "http://listen.grooveshark.com/JSQueue.swf?20110216.04"
+_referer = "http://grooveshark.com/JSQueue.swf?20110216.04"
 _token = None
 
 h = {}
@@ -45,7 +45,7 @@ def getToken():
     p["header"] = h
     p["header"]["client"] = "htmlshark"
     p["header"]["clientRevision"] = "20101222.35"
-    conn = httplib.HTTPSConnection("listen.grooveshark.com")
+    conn = httplib.HTTPSConnection("grooveshark.com")
     conn.request("POST", "/more.php", json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
     _token = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]
 
@@ -59,8 +59,8 @@ def getSearchResultsEx(query, type="Songs"):
     p["header"]["clientRevision"] = "20101222"
     p["header"]["token"] = prepToken("getSearchResultsEx")
     p["method"] = "getSearchResultsEx"
-    conn = httplib.HTTPConnection("listen.grooveshark.com")
-    conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer":"http://listen.grooveshark.com/", "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
+    conn = httplib.HTTPConnection("grooveshark.com")
+    conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer":"http://grooveshark.com/", "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
     return json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]["result"]
 
 def getStreamKeyFromSongIDEx(id):
@@ -75,7 +75,7 @@ def getStreamKeyFromSongIDEx(id):
     p["header"]["clientRevision"] = "20101012.37"
     p["header"]["token"] = prepToken("getStreamKeyFromSongIDEx")
     p["method"] = "getStreamKeyFromSongIDEx"
-    conn = httplib.HTTPConnection("listen.grooveshark.com")
+    conn = httplib.HTTPConnection("grooveshark.com")
     conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
     return json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())
 
@@ -86,7 +86,7 @@ def header_cb(buf):
         h["session"] = buf[1][10:-1]
 
 def init():
-    conn = httplib.HTTPConnection("listen.grooveshark.com")
+    conn = httplib.HTTPConnection("grooveshark.com")
     conn.request("HEAD", "", headers={"User-Agent": _useragent})
     res = conn.getresponse()
     cookie = res.getheader("set-cookie").split(";")
