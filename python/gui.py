@@ -14,7 +14,7 @@ if sys.platform == 'win32':
     except: pass
     sys.stdout = open("groove.exe.out", "w")
     sys.stderr = open("groove.exe.err", "w")
-elif sys.platform == 'linux2': dest = os.getenv('HOME') + '/Music'; conf = ""
+elif sys.platform == 'linux2': dest = os.getenv('HOME') + '/Music'; conf = os.getenv('HOME') + '/.groove'
 import wx
 import wx.lib.newevent
 import base64
@@ -149,12 +149,9 @@ class MyFrame(wx.Frame):
         if event.GetEventObject() == self.lst_results:
             self._ContextSelection(ID_DOWNLOAD)
         elif event.GetEventObject() == self.lst_downloads:
-            if sys.platform == 'win32':
-                path = dest + "\\" + self.lst_downloads.GetSelectedObjects()[0]["filename"]
-                os.startfile(path)
-            elif sys.platform == 'linux2':
-                path = dest + "/" + self.lst_downloads.GetSelectedObjects()[0]["filename"]
-                subprocess.Popen(['xdg-open', path])
+            path = os.path.join(dest, self.lst_downloads.GetSelectedObjects()[0]["filename"])
+            if sys.platform == 'win32': os.startfile(path)
+            elif sys.platform == 'linux2': subprocess.Popen(['xdg-open', path])
     def _ContextSelection(self, event):
         if (event == ID_DOWNLOAD) or (event.GetId() == ID_DOWNLOAD):
             for song in self.lst_results.GetSelectedObjects():
@@ -195,11 +192,10 @@ class t_download(threading.Thread):
             self.t = time.time()
             self.beg = self.t
             self.lastCount = 0
-            print dest
-            urlretrieve("http://" + key["result"]["ip"] + "/stream.php", dest + "/" + self.download["filename"], self.hook, "streamKey="+key["result"]["streamKey"])
+            urlretrieve("http://" + key["result"]["ip"] + "/stream.php", os.path.join(dest, self.download["filename"]), self.hook, "streamKey="+key["result"]["streamKey"])
         except Exception, ex:
             if ex.args[0] == "Cancelled":
-                os.remove(dest + "/" + self.download["filename"])
+                os.remove(os.path.join(dest, self.download["filename"]))
             else:
                 raise ex
     def hook(self, countBlocks, Block, TotalSize):
@@ -287,11 +283,11 @@ class t_init(threading.Thread):
 def main():
     global dest
     config = ConfigParser.RawConfigParser()
-    if not os.path.exists(conf + "settings.ini"):
+    if not os.path.exists(os.path.join(conf, "settings.ini")):
         config.add_section("groove-dl")
         config.set("groove-dl", "dest", dest)
-        config.write(open(conf + "settings.ini", "wb"))
-    config.read(conf + "settings.ini")
+        config.write(open(os.path.join(conf, "settings.ini"), "wb"))
+    config.read(os.path.join(conf, "settings.ini"))
     dest = config.get("groove-dl", "dest")
     app = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()
