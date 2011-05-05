@@ -27,9 +27,9 @@
     a { color: #000000; }
     subh2 { text-decoration: underline; font-weight: bold; }
     .indented { padding-left:15pt; }
-    .description { font-family: "Arial"; font-size: 18px; font-style: italic; font-weight: bold; margin-bottom: 30px; margin-top: 30px; }
+    .description { font-family: "sans-serif"; font-size: 14px; font-weight: bold; margin-bottom: 30px; margin-top: 30px; }
     .download { float: right; }
-		pre { background: #eee; color: #000; font-family: "Lucida Console";}
+	pre { background: #eee; color: #000; font-family: "monospace"; font-size: 11px; white-space: normal}
     hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
     .footer { text-align:center; padding-top:30px; font-style: italic; }
 </style>
@@ -58,21 +58,21 @@
 	<h1 style="padding-top: 20px; text-align: center;"><a href="http://github.com/jacktheripper51/groove-dl"><img src=groove.png style="vertical-align: middle">   JTR's Grooveshark Downloader</a><br>
 	<span class="small" style="padding-left: 400px">by <a href="http://github.com/jacktheripper51">George Stephanos</a></span></h1>
 	<div class="description">
-		 A <a href="http://listen.grooveshark.com">
-		<img src="groove_logo.png" alt='Grooveshark' style="vertical-align: middle;"></a> song downloader in Python
+		 A snappy song downloader for <a href="http://grooveshark.com/"><img src="groove_logo.png" alt='Grooveshark' style="vertical-align: middle;"></a><div style="font-size: 7px">that has obviously no connections with Grooveshark.</div>
+
 	</div>
+    <a href="screenshot.png"><img src="screenshot_small.gif" alt='Screenshot' class="download"></a>
 	<h2>Dependencies</h2>
 	<p class="indented">
-    Python v2.6 (<a href="http://www.python.org">http://www.python.org</a>)<br>
-		wxPython v2.8 (<a href="http://www.wxpython.org">http://www.wxpython.org</a>)<br>
-		ObjectListView v1.2 (<a href="http://objectlistview.sourceforge.net/python">http://objectlistview.sourceforge.net/python/</a>)
+    <a href="http://www.python.org">Python v2.6</a>. Also supports v2.5 if <a href="http://pypi.python.org/pypi/simplejson/">simplejson</a> is provided.<br>
+    <a href="http://www.wxpython.org">wxPython v2.8</a><br>
+	<a href="http://objectlistview.sourceforge.net/python">ObjectListView v1.2</a>
 	</p>
 	<h2>Planned Features</h2>
 	<p class="indented">
     <ul>
-      <li>Embedded full featured Grooveshark player</li>
-      <li>Better search UI</li>
-      <li>A version for Symbian (and maybe Android and iOS)</li>
+      <li>Should allow listening internally</li>
+      <li>Mobile version(s)</li>
     </ul>
     Feel free to add any <a href="http://www.facebook.com/pages/JTRs-Grooveshark-Downloader/201616579864984?sk=app_2373072738">suggestions</a>
     in the <a href="http://www.facebook.com/pages/JTRs-Grooveshark-Downloader/201616579864984">facebook group</a>.
@@ -80,17 +80,21 @@
 	<h2 id="downloads">Downloads</h2>
 	<script src="http://connect.facebook.net/en_US/all.js#xfbml=1"></script><fb:like-box class="download" align="right" href="http://www.facebook.com/pages/JTRs-Grooveshark-Downloader/201616579864984" width="300" height="75" show_faces="false" stream="false" header="false"></fb:like-box>
 	<p class="indented">
-    Whole bundles:<br>
+	Windows bundles:<br>
 		<ul>
-      <li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.94.2all.exe">groove-dl_0.94.2</a></li>
-      <li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.94.1all.exe">groove-dl_0.94.1</a></li>
-			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.94all.exe">groove-dl_0.94</a></li>
-			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.93all.exe">groove-dl_0.93</a></li>
-			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.92all.exe">groove-dl_0.92</a></li>
-			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.91all.exe">groove-dl_0.91</a></li>
-			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.90all.exe">groove-dl_0.90</a></li>
+    		<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.95all.exe">groove-dl_0.95all.exe</a></li>
+			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.94.2all.exe">groove-dl_0.94.2all.exe</a></li>
+			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.94.1all.exe">groove-dl_0.94.1all.exe</a></li>
+			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.94all.exe">groove-dl_0.94all.exe</a></li>
+			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.93all.exe">groove-dl_0.93all.exe</a></li>
 		</ul>
-	</p>
+	<p class="indented">
+	Linux (Debian-based excluding Maemo):<br>
+		<ul>
+			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.95-2_all.deb">groove-dl_0.95-2_all.deb</a></li>
+			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.95-1_all.deb">groove-dl_0.95-1_all.deb</a></li>
+			<li><a href="https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_0.94.2-2_all.deb">groove-dl_0.94.2-2_all.deb</a></li>
+		</ul>
 	<h2>Installation</h2>
 	<p class="indented">
 		<subh2>Windows users:</subh2><br>
@@ -98,47 +102,45 @@
 	</p>
 	<ul>
 		<li>Run the file downloaded</li>
-		<li>Choose a directory, click Extract</li>
+		<li>Choose a directory (installing to 'C:\Program Files' would most probably break updates Vista onwards), install</li>
 		<li>Read readme.txt</li>
-		<li>Run groove.exe</li>
+		<li>Find its shortcut in your Start Menu and enjoy!</li>
 	</ul>
 	<p class="indented">
-		Simple enough ?<br>
-		<br>
 		<subh2>Linux (including the N900's Maemo) users:</subh2><br>
-		 You will have to do this the hard way (since I haven't yet provided any binary rpm/deb packages) which consists of basically:
+		I have only provided debian packages, so if your distribution does not support them, you'll have to:
 	</p>
 	<ul>
-		<li>Installing dependencies:<br>
+		<li>Install dependencies:<br>
 		<ul>
 			<li>Grabbing latest Python (2.x) .</li>
 			<li>Installing latest wxPython.<br>
           Debian-based: <pre>sudo apt-get install python-wxgtk2.8</pre>
           RPM-based: <pre>sudo yum install wxPython</pre>
 			</li>
-			<li>Getting OLV from its site and running:
-    			<pre>sudo setup.py install</pre>
+			<li>Getting OLV from its site and installing it:
+    			<pre>wget <a href="http://downloads.sourceforge.net/project/objectlistview/objectlistview-python/v1.2/ObjectListView-1.2-without-graphics.zip?r=&ts=1305220915&use_mirror=garr">http://downloads.sourceforge.net/project/objectlistview/objectlistview-python/v1.2/ObjectListView-1.2-without-graphics.zip?r=&ts=1305220915&use_mirror=garr</a> -O OLV.zip<br>unzip OLV.zip<br>cd ObjectListView-1.2<br>sudo setup.py install<br>cd ..<br>rm OLV.zip</pre>
 			</li>
 		</ul>
 		</li>
-		<li>Downloading my two scripts from git (<a href="https://github.com/jacktheripper51/groove-dl/raw/master/python/gui.py">gui.py</a> and <a href="https://github.com/jacktheripper51/groove-dl/raw/master/python/groove.py">groove.py</a>)</li>
-		<li>Executing groove.py.</li>
+		<li>Download both scripts from git into one directory and executing groove.py<br>
+		    <pre>mkdir ./groove-dl && cd ./groove-dl<br>wget <a href="https://github.com/jacktheripper51/groove-dl/raw/master/python/gui.py">https://github.com/jacktheripper51/groove-dl/raw/master/python/gui.py</a><br>wget <a href="https://github.com/jacktheripper51/groove-dl/raw/master/python/groove.py">https://github.com/jacktheripper51/groove-dl/raw/master/python/groove.py</a><br>python groove.py</pre>
+        </li>
 	</ul>
 	<p class="indented">
-		<br>
 		<subh2>Mac OS X users:</subh2><br>
-		I have no idea. Following the linux instructions will probably work for you.</p>
+		Following the linux instructions should work.</p>
 	<h2>Authors</h2>
 	<p class="indented">
         George Stephanos &lt;gaf.stephanos@gmail.com&gt;<br>
-        Most credits to this <a href="http://nettech.wikia.com/wiki/Grooveshark_Internal_API">protocol wiki</a> though. But still!<br>
+        Most credits to this <a href="http://nettech.wikia.com/wiki/Grooveshark_Internal_API">protocol wiki</a>.<br>
         Questions/Suggestions should be directed right to the email given above.
 	</p>
 	<div class="footer">
 		 get the source code on GitHub : <a href="http://github.com/jacktheripper51/groove-dl">jacktheripper51/groove-dl</a>
 	</div>
 	<div style="text-align: center; font-size: 5px; font-style: italic;">
-         Please excuse me for such a hideous web page. It's my first. A puny attempt at HTML and CSS.
+         Please excuse me for such a hideous web page. It's my first ever attempt at HTML and CSS.
 	</div>
 </div>
 </body>
