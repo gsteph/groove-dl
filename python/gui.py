@@ -14,7 +14,10 @@ if sys.platform == 'win32':
     except: pass
     sys.stdout = open("groove.exe.out", "w")
     sys.stderr = open("groove.exe.err", "w")
-elif sys.platform == 'linux2': dest = os.getenv('HOME') + '/Music'; conf = os.getenv('HOME') + '/.groove'
+elif sys.platform == 'linux2': 
+    dest = os.getenv('HOME') + '/Music'; conf = os.getenv('HOME') + '/.groove'
+    try: os.makedirs(conf)
+    except: pass
 import wx
 import wx.lib.newevent
 import base64
