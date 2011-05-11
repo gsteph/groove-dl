@@ -49,10 +49,10 @@ def getToken():
     conn.request("POST", "/more.php", json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
     _token = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]
 
-def getSearchResultsEx(query, type="Songs"):
+def getSearchResultsEx(query, what="Songs"):
     p = {}
     p["parameters"] = {}
-    p["parameters"]["type"] = type
+    p["parameters"]["type"] = what
     p["parameters"]["query"] = query
     p["header"] = h
     p["header"]["client"] = "htmlshark"
@@ -62,6 +62,20 @@ def getSearchResultsEx(query, type="Songs"):
     conn = httplib.HTTPConnection("grooveshark.com")
     conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer":"http://grooveshark.com/", "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
     return json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]["result"]
+
+def artistGetSongsEx(id, isVerified):
+    p = {}
+    p["parameters"] = {}
+    p["parameters"]["artistID"] = id
+    p["parameters"]["isVerifiedOrPopular"] = isVerified
+    p["header"] = h
+    p["header"]["client"] = "htmlshark"
+    p["header"]["clientRevision"] = "20101222"
+    p["header"]["token"] = prepToken("artistGetSongsEx")
+    p["method"] = "artistGetSongsEx"
+    conn = httplib.HTTPConnection("grooveshark.com")
+    conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
+    return json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())
 
 def getStreamKeyFromSongIDEx(id):
     p = {}
@@ -101,7 +115,8 @@ if __name__ == "__main__":
     init()
     getToken()
     m = 0
-    s = getSearchResultsEx(sys.argv[1])
+    s = artistGetSongs(276, 0)
+    #s = getSearchResultsEx(sys.argv[1])
     for l in s:
         m += 1
         print str(m) + ': "' + l["SongName"] + '" by "' + l["ArtistName"] + '" (' + l["AlbumName"] + ')'

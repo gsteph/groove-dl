@@ -35,10 +35,7 @@ def SetStatus(frame, event): frame.frame_statusbar.SetStatusText(event.attr1)
 def EnableFrame(frame, event):
     frame.txt_query.Enable(event.attr1)
     frame.cb_type.Enable(event.attr1)
-def ClearResults(frame, event): frame.lst_results.DeleteAllItems() if frame.lst_results.GetItemCount() > 0 else None
-def ShowDownloader(frame, event):
-    frame.lst_downloads.Show(event.attr1)
-    frame.sizer_1.Layout()
+    frame.lst_artists.Enable(event.attr1)
 def UpdateItem(frame, event):
     frame.lst_downloads.RefreshObject(event.attr1)
 def SetFocus(frame, event): event.attr1.SetFocus()
@@ -52,20 +49,35 @@ def strip(value, deletechars):
         value = value.replace(c,'')
     return value;
 
+class Album:
+    def __init__(self):
+        self.name = ""
+        self.Songs = []
+        self.id = 0
+class Artist:
+    def __init__(self):
+        self.name = ""
+        self.Albums = []
+        self.gotalbums = False
+        self.isVer = 0
+        self.id = 0
 class MyFrame(wx.Frame):
     results=[]
     downloads=[]
     def __init__(self, *args, **kwds):
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
-        self.cb_type = wx.ComboBox(self, -1, choices=["Songs", "Artists", "Albums"], style=wx.CB_DROPDOWN|wx.CB_READONLY)
+        self.cb_type = wx.ComboBox(self, -1, choices=["Songs", "Artists", "Albums"], style=wx.CB_DROPDOWN|wx.CB_READONLY, size=[100,23], pos=[0, 0])
         font = wx.Font(9, wx.FONTFAMILY_DEFAULT, style=wx.FONTSTYLE_NORMAL, weight=wx.FONTWEIGHT_NORMAL)
-        self.lbl_query = wx.StaticText(self, -1, "  Query:  ", style=wx.ALIGN_CENTRE)
+        self.lbl_query = wx.StaticText(self, -1, "  Song:  ", style=wx.ALIGN_CENTRE)
         self.lbl_query.SetFont(font)
         self.txt_query = wx.TextCtrl(self, 1, "", style=wx.TE_PROCESS_ENTER)
         self.folder_chooser = wx.Button(self, -1, "Choose Destination", size=[-1, self.txt_query.GetSize().GetHeight()])
         self.lst_results = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.lst_downloads = ObjectListView(self, -1, style=wx.LC_REPORT)
+        self.lst_artists = ObjectListView(self, -1, style=wx.LC_REPORT)
+        self.lst_albums = ObjectListView(self, -1, style=wx.LC_REPORT)
+        self.lst_songs = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.frame_statusbar = self.CreateStatusBar(1, wx.SB_RAISED)
         self.cb_type.Show(False)
         self.__set_properties()
@@ -74,14 +86,19 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_TEXT_ENTER, self._TextEnter, self.txt_query)
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self._ResultsContext, self.lst_results)
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._DoubleClick, self.lst_results)
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._DoubleClick, self.lst_songs)
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._DoubleClick, self.lst_downloads)
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self._DownloadsContext, self.lst_downloads)
         self.Bind(wx.EVT_BUTTON, self._ChooseFolder, self.folder_chooser)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._ObjectSelected, self.lst_artists)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._ObjectSelected, self.lst_albums)
+        self.txt_query.Bind(wx.EVT_KEY_DOWN, self._Tab)
         self.Bind(wx.EVT_CLOSE, self._Close)
         self.menu_results = {}
         self.menu_downloads = {}
         self.menu_results[ID_DOWNLOAD] = "Download"
         self.menu_downloads[ID_REMOVE] = "Remove"
+        self.artists = []
         if sys.platform == 'win32':
             self.SetIcon(wx.Icon(sys.executable, wx.BITMAP_TYPE_ICO))
         else:
@@ -90,7 +107,7 @@ class MyFrame(wx.Frame):
         self.SetTitle("JTR's Grooveshark Downloader v" + version)
         self.SetSize((600, 400))
         self.cb_type.SetMinSize((100, 23))
-        self.cb_type.SetSelection(0)
+        self.cb_type.SetSelection(1)
         self.frame_statusbar.SetStatusWidths([-1])
         frame_statusbar_fields = [""]
         columns = [
@@ -101,37 +118,62 @@ class MyFrame(wx.Frame):
         columns[1].freeSpaceProportion = columns[2].freeSpaceProportion = 1
         self.lst_results.SetColumns(columns)
         self.lst_results.SetObjects(self.results)
-        self.lst_results.SetEmptyListMsg("Type into above text field to search.")
+        self.lst_results.SetEmptyListMsg("Type into above text field to search.\nTab to switch modes.")
         self.lst_results._ResizeSpaceFillingColumns()
         self.lst_results.useAlternateBackColors = False
         columns = [
         ColumnDefn("Title", "left", 160, valueGetter = "filename", isSpaceFilling=True),
-        ColumnDefn("Estimated Bitrate", "center", 110, valueGetter = "bitrate"),
+        ColumnDefn("Bitrate", "center", 60, valueGetter = "bitrate"),
         ColumnDefn("Speed", "center", 75, valueGetter = "speed"),
-        ColumnDefn("Done/Total", "center", 80, valueGetter = "size"),
+        ColumnDefn("Done/Total", "center", 100, valueGetter = "size"),
         ColumnDefn("Progress", "center", 80, valueGetter = "progress")]
         self.lst_downloads.SetColumns(columns)
         self.lst_downloads.SetObjects(self.downloads)
         self.lst_downloads.SetEmptyListMsg("N/A")
         self.lst_downloads.SortBy(0)
         self.lst_downloads.useAlternateBackColors = False
+        columns = [ColumnDefn("Artist", "center", 100, valueGetter = "name", isSpaceFilling=True)]
+        self.lst_artists.SetColumns(columns)
+        self.lst_artists.SetEmptyListMsg("N/A")
+        self.lst_artists.useAlternateBackColors = False
+        columns = [ColumnDefn("Album", "center", 100, valueGetter = "name", isSpaceFilling=True)]
+        self.lst_albums.SetColumns(columns)
+        self.lst_albums.SetEmptyListMsg("N/A")
+        self.lst_albums.useAlternateBackColors = False
+        columns = [ColumnDefn("Song", "center", 100, valueGetter = "Name", isSpaceFilling=True)]
+        self.lst_songs.SetColumns(columns)
+        self.lst_songs.SetEmptyListMsg("N/A")
+        self.lst_songs.useAlternateBackColors = False
         for i in range(len(frame_statusbar_fields)):
             self.frame_statusbar.SetStatusText(frame_statusbar_fields[i], i)
         self.frame_statusbar.SetStatusStyles([wx.SB_FLAT])
+        self.list_by_mode = self.lst_results
     def __do_layout(self):
         self.sizer_1 = wx.BoxSizer(wx.VERTICAL)
         self.sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
         #self.sizer_2.Add(self.cb_type, 0, wx.EXPAND, 0)
         self.sizer_2.Add(self.lbl_query, 0, wx.ALIGN_CENTER, 0)
         self.sizer_2.Add(self.txt_query, 2, 0, 0)
         self.sizer_2.Add(self.folder_chooser, 0, wx.ALIGN_CENTER, 0)
         self.sizer_1.Add(self.sizer_2, 0, wx.EXPAND, 0)
         self.sizer_1.Add(self.lst_results, 2, wx.EXPAND, 0)
+        self.sizer_1.Add(self.sizer_3, 2, wx.EXPAND, 0)
         self.sizer_1.Add(self.lst_downloads, 1, wx.EXPAND, 0)
+        self.sizer_3.Add(self.lst_artists, 1, wx.EXPAND, 0)
+        self.sizer_3.Add(self.lst_albums, 1, wx.EXPAND, 0)
+        self.sizer_3.Add(self.lst_songs, 2, wx.EXPAND, 0)
         self.SetSizer(self.sizer_1)
+        self.sizer_1.Show(self.sizer_3, False)
         self.Layout()
     def _TextEnter(self, event):
-        search_thread = t_search(self, event.GetString(), self.cb_type.GetValue())
+        self.artists = []
+        if self.lbl_query.GetLabel() == "  Artist:  ":
+            self.lst_albums.DeleteAllItems()
+            self.lst_songs.DeleteAllItems()
+            search_thread = t_search_object(self, _query=event.GetString())
+        elif self.lbl_query.GetLabel() == "  Song:  ":
+            search_thread = t_search_flat(self, event.GetString())
         search_thread.start()
     def _ExecFunc(self, event):
         event.func(self, event)
@@ -149,7 +191,7 @@ class MyFrame(wx.Frame):
         self.PopupMenu(menu, event.GetPoint() + self.lst_downloads.GetPosition())
         menu.Destroy()
     def _DoubleClick(self, event):
-        if event.GetEventObject() == self.lst_results:
+        if event.GetEventObject() == self.lst_results or event.GetEventObject() == self.lst_songs:
             self._ContextSelection(ID_DOWNLOAD)
         elif event.GetEventObject() == self.lst_downloads:
             path = os.path.join(dest, self.lst_downloads.GetSelectedObjects()[0]["filename"])
@@ -157,8 +199,12 @@ class MyFrame(wx.Frame):
             elif sys.platform == 'linux2': subprocess.Popen(['xdg-open', path])
     def _ContextSelection(self, event):
         if (event == ID_DOWNLOAD) or (event.GetId() == ID_DOWNLOAD):
-            for song in self.lst_results.GetSelectedObjects():
-                filename = "%s - %s.mp3" % (strip(song["ArtistName"], "<>:\"/\|?*"), strip(song["SongName"], "<>:\"/\|?*"))
+            if self.lbl_query.GetLabel() == "  Song:  ":
+                lst = self.lst_results
+            elif self.lbl_query.GetLabel() == "  Artist:  ":
+                lst = self.lst_songs
+            for song in lst.GetSelectedObjects():
+                filename = "%s - %s.mp3" % (strip(song["ArtistName"], "<>:\"/\|?*"), strip(song["Name"], "<>:\"/\|?*"))
                 t = t_download(self, song)
                 t.download = {"progress":"Initializing", "thread":t, "filename":filename}
                 self.downloads.append(t.download)
@@ -175,6 +221,30 @@ class MyFrame(wx.Frame):
         if dialog.ShowModal() == wx.ID_OK:
             dest = dialog.GetPath()
         dialog.Destroy()
+    def _Tab(self, event):
+        if event.GetKeyCode() == 9:
+            if self.lbl_query.GetLabel() == "  Song:  ":
+                self.sizer_1.Show(self.sizer_3, True)
+                self.sizer_1.Show(self.lst_results, False)
+                self.sizer_1.Layout()
+                self.lbl_query.SetLabel("  Artist:  ")
+                self.list_by_mode = self.lst_artists
+            elif self.lbl_query.GetLabel() == "  Artist:  ":
+                self.sizer_1.Show(self.sizer_3, False)
+                self.sizer_1.Show(self.lst_results, True)
+                self.sizer_1.Layout()
+                self.lbl_query.SetLabel("  Song:  ")
+                self.list_by_mode = self.lst_results
+        event.Skip()
+    def _ObjectSelected(self, event):
+        if event.GetEventObject() == self.lst_artists:
+            self.lst_albums.DeleteAllItems()
+            self.lst_songs.DeleteAllItems()
+            obj = self.lst_artists.GetSelectedObject()
+            artist_thread = t_search_object(self, obj)
+            artist_thread.start()
+        elif event.GetEventObject() == self.lst_albums:
+            self.lst_songs.SetObjects(self.lst_albums.GetSelectedObject().Songs)
     def _Close(self, event):
         sys.stdout.close()
         sys.stderr.close()
@@ -218,16 +288,65 @@ class t_download(threading.Thread):
             self.download["speed"] = self.download["speed"] = "~%.02f KB/s" % (countBlocks*Block / (time.time() - self.beg) / 1024)
         wx.PostEvent(self.frame, evtExecFunc(func=UpdateItem, attr1=self.download))
 
-class t_search(threading.Thread):
-    def __init__ (self, _frame, _query, _type):
+class t_search_object(threading.Thread):
+    def __init__ (self, _frame, _artist=None, _query=None):
+        threading.Thread.__init__(self)
+        self.frame = _frame
+        self.artist = _artist
+        self.query = _query
+    def run(self):
+        if self.artist == None:
+            wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=False))
+            wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1='Searching for \"' + self.query + '\"...'))
+            self.frame.results = groove.getSearchResultsEx(self.query, "Artists")
+            for a in self.frame.results:
+                b = Artist()
+                b.name = a["ArtistName"]
+                b.isVer = a["IsVerified"]
+                b.id = a["ArtistID"]
+                self.frame.artists.append(b)
+            def f(frame, event): frame.lst_artists.SetObjects(frame.artists)
+            wx.PostEvent(self.frame, evtExecFunc(func=f))
+            wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
+            wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
+            wx.PostEvent(self.frame, evtExecFunc(func=SetFocus, attr1=self.frame.lst_artists))
+        else:
+            if not self.artist.gotalbums:
+                wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=False))
+                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1='Retreiving artist\'s songs...'))
+                self.frame.results = groove.artistGetSongsEx(self.artist.id, self.artist.isVer)
+                #print len(self.frame.results['result'])
+                for i in self.frame.results['result']:
+                    flag = True
+                    for a in self.artist.Albums:
+                        if a.id == i["AlbumID"]:
+                            flag = False
+                            break
+                    if flag:
+                        a = Album()
+                        a.name = i["AlbumName"]
+                        a.id = i["AlbumID"]
+                        self.artist.Albums.append(a)
+                for i in self.frame.results['result']:
+                    for a in self.artist.Albums:
+                        if a.id == i["AlbumID"]:
+                            a.Songs.append(i)
+                            break
+                self.artist.gotalbums = True
+            def f(frame, event): frame.lst_albums.SetObjects(self.artist.Albums)
+            wx.PostEvent(self.frame, evtExecFunc(func=f))
+            wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
+            wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
+        
+class t_search_flat(threading.Thread):
+    def __init__ (self, _frame, _query):
         threading.Thread.__init__(self)
         self.frame = _frame
         self.query = _query
-        self.type = _type
     def run(self):
         wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=False))
         wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1='Searching for \"' + self.query + '\"...'))
-        self.frame.results = groove.getSearchResultsEx(self.query, self.type)
+        self.frame.results = groove.getSearchResultsEx(self.query, "Songs")
         def f(frame, event): frame.lst_results.SetObjects(frame.results)
         wx.PostEvent(self.frame, evtExecFunc(func=f))
         wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
