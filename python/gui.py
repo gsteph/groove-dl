@@ -34,10 +34,8 @@ from ObjectListView import ObjectListView, ColumnDefn
 def SetStatus(frame, event): frame.frame_statusbar.SetStatusText(event.attr1)
 def EnableFrame(frame, event):
     frame.txt_query.Enable(event.attr1)
-    frame.cb_type.Enable(event.attr1)
     frame.lst_artists.Enable(event.attr1)
-def UpdateItem(frame, event):
-    frame.lst_downloads.RefreshObject(event.attr1)
+def UpdateItem(frame, event): frame.lst_downloads.RefreshObject(event.attr1)
 def SetFocus(frame, event): event.attr1.SetFocus()
 
 evtExecFunc, EVT_EXEC_FUNC = wx.lib.newevent.NewEvent()
@@ -67,7 +65,6 @@ class MyFrame(wx.Frame):
     def __init__(self, *args, **kwds):
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
-        self.cb_type = wx.ComboBox(self, -1, choices=["Songs", "Artists", "Albums"], style=wx.CB_DROPDOWN|wx.CB_READONLY, size=[100,23], pos=[0, 0])
         font = wx.Font(9, wx.FONTFAMILY_DEFAULT, style=wx.FONTSTYLE_NORMAL, weight=wx.FONTWEIGHT_NORMAL)
         self.lbl_query = wx.StaticText(self, -1, "  Song:  ", style=wx.ALIGN_CENTRE)
         self.lbl_query.SetFont(font)
@@ -79,7 +76,6 @@ class MyFrame(wx.Frame):
         self.lst_albums = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.lst_songs = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.frame_statusbar = self.CreateStatusBar(1, wx.SB_RAISED)
-        self.cb_type.Show(False)
         self.__set_properties()
         self.__do_layout()
         self.Bind(EVT_EXEC_FUNC, self._ExecFunc)
@@ -106,8 +102,6 @@ class MyFrame(wx.Frame):
     def __set_properties(self):
         self.SetTitle("JTR's Grooveshark Downloader v" + version)
         self.SetSize((600, 400))
-        self.cb_type.SetMinSize((100, 23))
-        self.cb_type.SetSelection(1)
         self.frame_statusbar.SetStatusWidths([-1])
         frame_statusbar_fields = [""]
         columns = [
@@ -152,7 +146,6 @@ class MyFrame(wx.Frame):
         self.sizer_1 = wx.BoxSizer(wx.VERTICAL)
         self.sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
-        #self.sizer_2.Add(self.cb_type, 0, wx.EXPAND, 0)
         self.sizer_2.Add(self.lbl_query, 0, wx.ALIGN_CENTER, 0)
         self.sizer_2.Add(self.txt_query, 2, 0, 0)
         self.sizer_2.Add(self.folder_chooser, 0, wx.ALIGN_CENTER, 0)
@@ -197,7 +190,7 @@ class MyFrame(wx.Frame):
             path = os.path.join(dest, self.lst_downloads.GetSelectedObjects()[0]["filename"])
             if sys.platform == 'win32': os.startfile(path)
             elif sys.platform == 'linux2': subprocess.Popen(['xdg-open', path])
-    def _ContextSelection(self, event):
+    def _ContextSelection(self, event, flag=None):
         if (event == ID_DOWNLOAD) or (event.GetId() == ID_DOWNLOAD):
             if self.lbl_query.GetLabel() == "  Song:  ":
                 lst = self.lst_results
@@ -210,10 +203,10 @@ class MyFrame(wx.Frame):
                 self.downloads.append(t.download)
                 self.lst_downloads.SetObjects(self.downloads)
                 t.start()
-        elif event.GetId() == ID_REMOVE:
+        elif (flag != None and flag.flag == ID_REMOVE) or (event.GetId() == ID_REMOVE):
             for d in self.lst_downloads.GetSelectedObjects():
                 d["thread"].cancelled = True
-            for i in self.lst_downloads.GetSelectedObjects(): self.downloads.remove(i)
+                self.downloads.remove(d)
             self.lst_downloads.RemoveObjects(self.lst_downloads.GetSelectedObjects())
     def _ChooseFolder(self, event):
         global dest
@@ -258,10 +251,10 @@ class t_download(threading.Thread):
         self.duration = float(song["EstimateDuration"])
         self.cancelled = False
     def run(self):
-        key = groove.getStreamKeyFromSongIDEx(self.songid)
         try: os.makedirs(dest)
         except: pass
         try:
+            key = groove.getStreamKeyFromSongIDEx(self.songid)
             self.t = time.time()
             self.beg = self.t
             self.lastCount = 0
@@ -270,13 +263,16 @@ class t_download(threading.Thread):
             if ex.args[0] == "Cancelled":
                 os.remove(os.path.join(dest, self.download["filename"]))
             else:
-                raise ex
+                def f(frame, event): frame.lst_results.SetObjects(frame.results)
+                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Failed to retreive song. Please try another.."))
+                wx.PostEvent(self.frame, evtExecFunc(func=self.frame._ContextSelection, flag=ID_REMOVE))
+                
     def hook(self, countBlocks, Block, TotalSize):
         if self.cancelled: raise Exception("Cancelled")
         progress = float(countBlocks*Block) / float(TotalSize) * 100
         if countBlocks == 0:
             if self.duration != 0: self.download["bitrate"] = "%ukbps" % (TotalSize*8 / self.duration / 1000)
-            else: self.download["bitrate"] = "Failed"
+            else: self.download["bitrate"] = "-"
         self.download["progress"] = "%.0f%%" % progress if progress < 100 else "Completed"
         if time.time() - self.t > 0.2:
             self.download["size"] = "%.02f/%.02f MB" % (float(countBlocks*Block) / 1024**2, float(TotalSize) / 1024**2)
@@ -382,8 +378,7 @@ class t_init(threading.Thread):
                 subprocess.Popen([newfile, '-ai', '-gm2', '-y'])
                 os._exit(0)
     def run(self):
-        p = 1
-        while(p):
+        while(True):
             try:
                 wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=False))
                 if sys.platform == "win32": self.update()
@@ -394,10 +389,9 @@ class t_init(threading.Thread):
                 wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
                 wx.PostEvent(self.frame, evtExecFunc(func=SetFocus, attr1=self.frame.txt_query))
                 wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
-                p = 0
+                time.sleep(300)
             except Exception, e:
                 if e.args[0] == 11004:
-                    time.sleep(1)
                     wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Failed to connect. Waiting (2)"))
                     time.sleep(2)
                 else: print e.args

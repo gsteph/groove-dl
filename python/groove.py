@@ -10,7 +10,7 @@ import os
 import subprocess
 import gzip
 if sys.version_info[1] >= 6:  import json
-else: import simplejson
+else: import simplejson as json
 
 _useragent = "Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1"
 _referer = "http://grooveshark.com/JSQueue.swf?20110216.04"
@@ -45,7 +45,7 @@ def getToken():
     p["header"] = h
     p["header"]["client"] = "htmlshark"
     p["header"]["clientRevision"] = "20101222.35"
-    conn = httplib.HTTPSConnection("grooveshark.com")
+    conn = httplib.HTTPConnection("grooveshark.com")
     conn.request("POST", "/more.php", json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
     _token = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]
 
@@ -61,7 +61,11 @@ def getSearchResultsEx(query, what="Songs"):
     p["method"] = "getSearchResultsEx"
     conn = httplib.HTTPConnection("grooveshark.com")
     conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer":"http://grooveshark.com/", "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
-    return json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]["result"]
+    j = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())
+    try:
+        return j["result"]["result"]["Songs"]
+    except:
+        return j["result"]["result"]
 
 def artistGetSongsEx(id, isVerified):
     p = {}
@@ -107,16 +111,15 @@ def init():
     h["session"] = cookie[0][10:]
 
 if __name__ == "__main__":
-    print entrystring
     if len(sys.argv) < 2:
         import gui
         gui.main()
         exit()
+    print entrystring
     init()
     getToken()
     m = 0
-    s = artistGetSongs(276, 0)
-    #s = getSearchResultsEx(sys.argv[1])
+    s = getSearchResultsEx(sys.argv[1])
     for l in s:
         m += 1
         print str(m) + ': "' + l["SongName"] + '" by "' + l["ArtistName"] + '" (' + l["AlbumName"] + ')'
