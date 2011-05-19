@@ -29,7 +29,7 @@ import subprocess
 import ConfigParser
 import tempfile
 from urllib import urlretrieve
-from ObjectListView import ObjectListView, ColumnDefn
+from ObjectListView import ObjectListView, GroupListView, ColumnDefn
 
 def SetStatus(frame, event): frame.frame_statusbar.SetStatusText(event.attr1)
 def EnableFrame(frame, event):
@@ -41,6 +41,11 @@ def SetFocus(frame, event): event.attr1.SetFocus()
 evtExecFunc, EVT_EXEC_FUNC = wx.lib.newevent.NewEvent()
 ID_DOWNLOAD = wx.NewId()
 ID_REMOVE = wx.NewId()
+emptylistmsg = "Type into above text field to search.\nTab to switch modes."
+
+stats_flt = [0, 0]
+stats_obj = [0, 0]
+collect_stats = True
 
 def strip(value, deletechars):
     for c in deletechars:
@@ -71,7 +76,7 @@ class MyFrame(wx.Frame):
         self.txt_query = wx.TextCtrl(self, 1, "", style=wx.TE_PROCESS_ENTER)
         self.folder_chooser = wx.Button(self, -1, "Choose Destination", size=[-1, self.txt_query.GetSize().GetHeight()])
         self.lst_results = ObjectListView(self, -1, style=wx.LC_REPORT)
-        self.lst_downloads = ObjectListView(self, -1, style=wx.LC_REPORT)
+        self.lst_downloads = GroupListView(self, -1, style=wx.LC_REPORT)
         self.lst_artists = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.lst_albums = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.lst_songs = ObjectListView(self, -1, style=wx.LC_REPORT)
@@ -81,6 +86,7 @@ class MyFrame(wx.Frame):
         self.Bind(EVT_EXEC_FUNC, self._ExecFunc)
         self.Bind(wx.EVT_TEXT_ENTER, self._TextEnter, self.txt_query)
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self._ResultsContext, self.lst_results)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self._ResultsContext, self.lst_songs)
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._DoubleClick, self.lst_results)
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._DoubleClick, self.lst_songs)
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._DoubleClick, self.lst_downloads)
@@ -112,11 +118,11 @@ class MyFrame(wx.Frame):
         columns[1].freeSpaceProportion = columns[2].freeSpaceProportion = 1
         self.lst_results.SetColumns(columns)
         self.lst_results.SetObjects(self.results)
-        self.lst_results.SetEmptyListMsg("Type into above text field to search.\nTab to switch modes.")
+        self.lst_results.SetEmptyListMsg(emptylistmsg)
         self.lst_results._ResizeSpaceFillingColumns()
         self.lst_results.useAlternateBackColors = False
         columns = [
-        ColumnDefn("Title", "left", 160, valueGetter = "filename", isSpaceFilling=True),
+        ColumnDefn("Title", "left", 160, valueGetter = "filename", groupKeyGetter= "album", isSpaceFilling=True),
         ColumnDefn("Bitrate", "center", 60, valueGetter = "bitrate"),
         ColumnDefn("Speed", "center", 75, valueGetter = "speed"),
         ColumnDefn("Done/Total", "center", 100, valueGetter = "size"),
@@ -124,8 +130,10 @@ class MyFrame(wx.Frame):
         self.lst_downloads.SetColumns(columns)
         self.lst_downloads.SetObjects(self.downloads)
         self.lst_downloads.SetEmptyListMsg("N/A")
-        self.lst_downloads.SortBy(0)
+        self.lst_downloads.SortBy(1)
         self.lst_downloads.useAlternateBackColors = False
+        self.lst_downloads.putBlankLineBetweenGroups = False
+        self.lst_downloads.SetShowGroups(False)
         columns = [ColumnDefn("Artist", "center", 100, valueGetter = "name", isSpaceFilling=True)]
         self.lst_artists.SetColumns(columns)
         self.lst_artists.SetEmptyListMsg("N/A")
@@ -174,7 +182,11 @@ class MyFrame(wx.Frame):
         menu = wx.Menu()
         menu.Append(ID_DOWNLOAD, "Download")
         wx.EVT_MENU( menu, ID_DOWNLOAD, self._ContextSelection )
-        self.PopupMenu(menu, event.GetPoint() + self.lst_results.GetPosition())
+        if self.lbl_query.GetLabel() == "  Song:  ":
+            lst = self.lst_results
+        elif self.lbl_query.GetLabel() == "  Artist:  ":
+            lst = self.lst_songs
+        self.PopupMenu(menu, event.GetPoint() + lst.GetPosition())
         menu.Destroy()
     def _DownloadsContext(self, event):
         menu = wx.Menu()
@@ -184,12 +196,20 @@ class MyFrame(wx.Frame):
         self.PopupMenu(menu, event.GetPoint() + self.lst_downloads.GetPosition())
         menu.Destroy()
     def _DoubleClick(self, event):
-        if event.GetEventObject() == self.lst_results or event.GetEventObject() == self.lst_songs:
+        global stats_flt
+        global stats_obj
+        if event.GetEventObject() == self.lst_results:
+            stats_flt[0] += 1
+            self._ContextSelection(ID_DOWNLOAD)
+        elif event.GetEventObject() == self.lst_songs:
+            stats_obj[0] += 1
             self._ContextSelection(ID_DOWNLOAD)
         elif event.GetEventObject() == self.lst_downloads:
-            path = os.path.join(dest, self.lst_downloads.GetSelectedObjects()[0]["filename"])
-            if sys.platform == 'win32': os.startfile(path)
-            elif sys.platform == 'linux2': subprocess.Popen(['xdg-open', path])
+            try:
+                path = os.path.join(dest, self.lst_downloads.GetSelectedObjects()[0]["filename"])
+                if sys.platform == 'win32': os.startfile(path)
+                elif sys.platform == 'linux2': subprocess.Popen(['xdg-open', path])
+            except:pass
     def _ContextSelection(self, event, flag=None):
         if (event == ID_DOWNLOAD) or (event.GetId() == ID_DOWNLOAD):
             if self.lbl_query.GetLabel() == "  Song:  ":
@@ -199,7 +219,7 @@ class MyFrame(wx.Frame):
             for song in lst.GetSelectedObjects():
                 filename = "%s - %s.mp3" % (strip(song["ArtistName"], "<>:\"/\|?*"), strip(song["Name"], "<>:\"/\|?*"))
                 t = t_download(self, song)
-                t.download = {"progress":"Initializing", "thread":t, "filename":filename}
+                t.download = {"progress":"Initializing", "thread":t, "filename":filename, "album":song["AlbumName"]}
                 self.downloads.append(t.download)
                 self.lst_downloads.SetObjects(self.downloads)
                 t.start()
@@ -222,12 +242,16 @@ class MyFrame(wx.Frame):
                 self.sizer_1.Layout()
                 self.lbl_query.SetLabel("  Artist:  ")
                 self.list_by_mode = self.lst_artists
+                self.lst_downloads.SetShowGroups(True)
+                self.lst_downloads._ResizeSpaceFillingColumns()
             elif self.lbl_query.GetLabel() == "  Artist:  ":
                 self.sizer_1.Show(self.sizer_3, False)
                 self.sizer_1.Show(self.lst_results, True)
                 self.sizer_1.Layout()
                 self.lbl_query.SetLabel("  Song:  ")
                 self.list_by_mode = self.lst_results
+                self.lst_downloads.SetShowGroups(False)
+                self.lst_downloads._ResizeSpaceFillingColumns()
         event.Skip()
     def _ObjectSelected(self, event):
         if event.GetEventObject() == self.lst_artists:
@@ -239,15 +263,50 @@ class MyFrame(wx.Frame):
         elif event.GetEventObject() == self.lst_albums:
             self.lst_songs.SetObjects(self.lst_albums.GetSelectedObject().Songs)
     def _Close(self, event):
+        l = 0
+        for i in self.downloads:
+            if i["progress"] != "Completed":
+                l += 1
+        if l > 0: 
+            if wx.MessageDialog(self, "There are currently %d active downloads. Are you sure you want to cancel them and exit ?" % l, "Active downloads", wx.YES_NO|wx.CENTRE).ShowModal() == wx.ID_NO:
+                return
+        for d in self.downloads:
+            d["thread"].cancelled = True
+        config = ConfigParser.RawConfigParser()
+        config.add_section("groove-dl")
+        config.set("groove-dl", "dest", dest)
+        config.set("groove-dl", "stats_flt_now", stats_flt[0])
+        config.set("groove-dl", "stats_flt_last", stats_flt[1])
+        config.set("groove-dl", "stats_obj_now", stats_obj[0])
+        config.set("groove-dl", "stats_obj_last", stats_obj[1])
+        config.set("groove-dl", "collect_stats", collect_stats)
+        config.write(open(os.path.join(conf, "settings.ini"), "wb"))
         sys.stdout.close()
         sys.stderr.close()
+        while (threading.active_count() > 3): time.sleep(0.1)
         os._exit(0)
 
+class t_sendstats(threading.Thread):
+    def __init__(self, frame):
+        threading.Thread.__init__(self)
+        self.frame = frame
+    def run(self):
+        global stats_flt, stats_obj, collect_stats
+        while (collect_stats):
+            try:
+                time.sleep(5)
+                urlretrieve("http://jtr51.no-ip.org/count?flt=%d&obj=%d" % (stats_flt[0]-stats_flt[1], stats_obj[0]-stats_obj[1]))
+                stats_flt[1] = stats_flt[0]
+                stats_obj[1] = stats_obj[0]
+            except Exception, e: 
+                print e
+                pass
 class t_download(threading.Thread):
     def __init__(self, frame, song):
         threading.Thread.__init__(self)
         self.frame = frame
         self.songid = song["SongID"]
+        self.song = song
         self.duration = float(song["EstimateDuration"])
         self.cancelled = False
     def run(self):
@@ -262,11 +321,16 @@ class t_download(threading.Thread):
         except Exception, ex:
             if ex.args[0] == "Cancelled":
                 os.remove(os.path.join(dest, self.download["filename"]))
-            else:
-                def f(frame, event): frame.lst_results.SetObjects(frame.results)
-                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Failed to retreive song. Please try another.."))
-                wx.PostEvent(self.frame, evtExecFunc(func=self.frame._ContextSelection, flag=ID_REMOVE))
-                
+                return
+            elif key["result"] == []:
+                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Failed to retreive '%s'. Server error." % self.song["SongName"]))
+                def f(frame, event): 
+                    frame.lst_downloads.RemoveObject(self.download)
+                    frame.downloads.remove(self.download)
+                wx.PostEvent(self.frame, evtExecFunc(func=f))
+                time.sleep(2)
+                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
+
     def hook(self, countBlocks, Block, TotalSize):
         if self.cancelled: raise Exception("Cancelled")
         progress = float(countBlocks*Block) / float(TotalSize) * 100
@@ -295,23 +359,35 @@ class t_search_object(threading.Thread):
             wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=False))
             wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1='Searching for \"' + self.query + '\"...'))
             self.frame.results = groove.getSearchResultsEx(self.query, "Artists")
-            for a in self.frame.results:
-                b = Artist()
-                b.name = a["ArtistName"]
-                b.isVer = a["IsVerified"]
-                b.id = a["ArtistID"]
-                self.frame.artists.append(b)
-            def f(frame, event): frame.lst_artists.SetObjects(frame.artists)
-            wx.PostEvent(self.frame, evtExecFunc(func=f))
+            if self.frame.results != []:
+                for a in self.frame.results:
+                    b = Artist()
+                    b.name = a["ArtistName"]
+                    b.isVer = a["IsVerified"]
+                    b.id = a["ArtistID"]
+                    self.frame.artists.append(b)
+                def f(frame, event): frame.lst_artists.SetObjects(frame.artists)
+                wx.PostEvent(self.frame, evtExecFunc(func=f))
             wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
             wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
             wx.PostEvent(self.frame, evtExecFunc(func=SetFocus, attr1=self.frame.lst_artists))
+            if self.frame.results == []:
+                def f(frame, event): 
+                    frame.lst_artists.SetEmptyListMsg("No")
+                    frame.lst_albums.SetEmptyListMsg("results")
+                    frame.lst_songs.SetEmptyListMsg("found.")
+                def f2(frame, event): 
+                    frame.lst_artists.SetEmptyListMsg("N/A")
+                    frame.lst_albums.SetEmptyListMsg("N/A")
+                    frame.lst_songs.SetEmptyListMsg("N/A")
+                wx.PostEvent(self.frame, evtExecFunc(func=f))
+                time.sleep(1)
+                wx.PostEvent(self.frame, evtExecFunc(func=f2))
         else:
             if not self.artist.gotalbums:
                 wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=False))
                 wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1='Retreiving artist\'s songs...'))
                 self.frame.results = groove.artistGetSongsEx(self.artist.id, self.artist.isVer)
-                #print len(self.frame.results['result'])
                 for i in self.frame.results['result']:
                     flag = True
                     for a in self.artist.Albums:
@@ -343,11 +419,20 @@ class t_search_flat(threading.Thread):
         wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=False))
         wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1='Searching for \"' + self.query + '\"...'))
         self.frame.results = groove.getSearchResultsEx(self.query, "Songs")
-        def f(frame, event): frame.lst_results.SetObjects(frame.results)
-        wx.PostEvent(self.frame, evtExecFunc(func=f))
+        if self.frame.results != []:
+            def f(frame, event): frame.lst_results.SetObjects(frame.results)
+            wx.PostEvent(self.frame, evtExecFunc(func=f))
         wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
         wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
         wx.PostEvent(self.frame, evtExecFunc(func=SetFocus, attr1=self.frame.lst_results))
+        if self.frame.results == []:
+            def f(frame, event): frame.lst_results.DeleteAllItems()
+            wx.PostEvent(self.frame, evtExecFunc(func=f))
+            def f1(frame, event): frame.lst_results.SetEmptyListMsg("No results found.")
+            def f2(frame, event): frame.lst_results.SetEmptyListMsg(emptylistmsg)
+            wx.PostEvent(self.frame, evtExecFunc(func=f1))
+            time.sleep(1)
+            wx.PostEvent(self.frame, evtExecFunc(func=f2))
         
 class t_init(threading.Thread):
     def __init__ (self, _frame):
@@ -367,10 +452,10 @@ class t_init(threading.Thread):
                 filename = urlretrieve("https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_%sall.exe" % self.new, reporthook=self.updatehook)[0]
                 newfile = filename+"tmp.exe"
                 o = open(newfile, "wb")
-                for l in open(filename, "rb"):                                         ### Hack to replace the extract path
-                    if "InstallPath" in l:                                              ### to the current directory
+                for l in open(filename, "rb"):                                        ### Hack to replace the extract path
+                    if "InstallPath" in l:                                            ### to the current directory
                         l = l[:12] + '"' + os.getcwd().replace('\\', '\\\\') + '"\n'  ### because the functionality doesn't
-                    o.write(l)                                                          ### exist yet in 7zsfx through CLI
+                    o.write(l)                                                        ### exist yet in 7zsfx through CLI
                 o.close()
                 os.rename("groove.exe", "_groove.exe")
                 os.rename("modules", "_modules")
@@ -397,19 +482,27 @@ class t_init(threading.Thread):
                 else: print e.args
 
 def main():
-    global dest
+    global dest, collect_stats
     config = ConfigParser.RawConfigParser()
-    if not os.path.exists(os.path.join(conf, "settings.ini")):
-        config.add_section("groove-dl")
-        config.set("groove-dl", "dest", dest)
-        config.write(open(os.path.join(conf, "settings.ini"), "wb"))
-    config.read(os.path.join(conf, "settings.ini"))
-    dest = config.get("groove-dl", "dest")
+    if os.path.exists(os.path.join(conf, "settings.ini")):
+        try:
+            config.read(os.path.join(conf, "settings.ini"))
+            dest = config.get("groove-dl", "dest")
+            stats_flt[0] = int(config.get("groove-dl", "stats_flt_now"))
+            stats_flt[1] = int(config.get("groove-dl", "stats_flt_last"))
+            stats_obj[0] = int(config.get("groove-dl", "stats_obj_now"))
+            stats_obj[1] = int(config.get("groove-dl", "stats_obj_last"))
+            collect_stats = config.get("groove-dl", "collect_stats")
+        except:
+            pass
     app = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()
     frame = MyFrame(None, -1, "")
     app.SetTopWindow(frame)
     init_thread = t_init(frame)
     init_thread.start()
+    if collect_stats:
+        stats_thread = t_sendstats(frame)
+        stats_thread.start()
     frame.Show()
     app.MainLoop()
