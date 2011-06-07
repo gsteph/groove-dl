@@ -1,0 +1,3 @@
+Use this URL to reset the Editor to your settings:
+
+http://highslide.com/editor/?config=%7B%22loadingStyle%22%3A+%22Black%3A+big+icon%22,+%22applyDimming%22%3A+true,+%22dimmingDuration%22%3A+%22100%22,+%22easing%22%3A+%22easeInBack+%2F+easeOutBack%22,+%22alignment%22%3A+%22center%22%7D
