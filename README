@@ -1,6 +1,6 @@
-===========================Jacktheripper's Grooveshark Downloader===========================
+===========================JTR's Grooveshark Downloader===========================
 
-A downloader to Grooveshark's awesome music library. Based off the wiki at
+A downloader to Grooveshark's awesome music library. Based off of the wiki at
 http://nettech.wikia.com/wiki/Grooveshark_Internal_API.
 For now, only a python version with optional GUI is available.
 
@@ -31,7 +31,12 @@ My build script (dist.py) is included in the repository under dist/. Should run 
 latest Wine (with native imagehlp.dll) or Windows.
 Please do not change the code and distribute until you contact me.
 
+Ports:
+======
+There's a PHP port by Check over at https://github.com/check/groove-php 
 
+Disclaimer:
+===========
 I'm not responsible for any violations this script does to Grooveshark's TOS. It's more of a
 proof of concept.
 
