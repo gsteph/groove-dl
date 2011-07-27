@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "0.95"
+version = "0.96"
 import sys
 import os
 import shutil
@@ -42,10 +42,6 @@ evtExecFunc, EVT_EXEC_FUNC = wx.lib.newevent.NewEvent()
 ID_DOWNLOAD = wx.NewId()
 ID_REMOVE = wx.NewId()
 emptylistmsg = "Type into above text field to search.\nTab to switch modes."
-
-stats_flt = [0, 0]
-stats_obj = [0, 0]
-collect_stats = True
 
 def strip(value, deletechars):
     for c in deletechars:
@@ -198,11 +194,7 @@ class MyFrame(wx.Frame):
     def _DoubleClick(self, event):
         global stats_flt
         global stats_obj
-        if event.GetEventObject() == self.lst_results:
-            stats_flt[0] += 1
-            self._ContextSelection(ID_DOWNLOAD)
-        elif event.GetEventObject() == self.lst_songs:
-            stats_obj[0] += 1
+        if event.GetEventObject() in [self.lst_results, self.lst_downloads]:
             self._ContextSelection(ID_DOWNLOAD)
         elif event.GetEventObject() == self.lst_downloads:
             try:
@@ -275,32 +267,12 @@ class MyFrame(wx.Frame):
         config = ConfigParser.RawConfigParser()
         config.add_section("groove-dl")
         config.set("groove-dl", "dest", dest)
-        config.set("groove-dl", "stats_flt_now", stats_flt[0])
-        config.set("groove-dl", "stats_flt_last", stats_flt[1])
-        config.set("groove-dl", "stats_obj_now", stats_obj[0])
-        config.set("groove-dl", "stats_obj_last", stats_obj[1])
-        config.set("groove-dl", "collect_stats", collect_stats)
         config.write(open(os.path.join(conf, "settings.ini"), "wb"))
         sys.stdout.close()
         sys.stderr.close()
         while (threading.active_count() > 3): time.sleep(0.1)
         os._exit(0)
 
-class t_sendstats(threading.Thread):
-    def __init__(self, frame):
-        threading.Thread.__init__(self)
-        self.frame = frame
-    def run(self):
-        global stats_flt, stats_obj, collect_stats
-        while (collect_stats):
-            try:
-                time.sleep(5)
-                urlretrieve("http://jtr51.no-ip.org/count?flt=%d&obj=%d" % (stats_flt[0]-stats_flt[1], stats_obj[0]-stats_obj[1]))
-                stats_flt[1] = stats_flt[0]
-                stats_obj[1] = stats_obj[0]
-            except Exception, e: 
-                print e
-                pass
 class t_download(threading.Thread):
     def __init__(self, frame, song):
         threading.Thread.__init__(self)
@@ -422,6 +394,7 @@ class t_search_flat(threading.Thread):
         if self.frame.results != []:
             def f(frame, event): frame.lst_results.SetObjects(frame.results)
             wx.PostEvent(self.frame, evtExecFunc(func=f))
+            wx.PostEvent(self.frame, evtExecFunc(func=f))
         wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
         wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
         wx.PostEvent(self.frame, evtExecFunc(func=SetFocus, attr1=self.frame.lst_results))
@@ -482,17 +455,12 @@ class t_init(threading.Thread):
                 else: print e.args
 
 def main():
-    global dest, collect_stats
+    global dest
     config = ConfigParser.RawConfigParser()
     if os.path.exists(os.path.join(conf, "settings.ini")):
         try:
             config.read(os.path.join(conf, "settings.ini"))
             dest = config.get("groove-dl", "dest")
-            stats_flt[0] = int(config.get("groove-dl", "stats_flt_now"))
-            stats_flt[1] = int(config.get("groove-dl", "stats_flt_last"))
-            stats_obj[0] = int(config.get("groove-dl", "stats_obj_now"))
-            stats_obj[1] = int(config.get("groove-dl", "stats_obj_last"))
-            collect_stats = config.get("groove-dl", "collect_stats")
         except:
             pass
     app = wx.PySimpleApp(0)
@@ -501,8 +469,5 @@ def main():
     app.SetTopWindow(frame)
     init_thread = t_init(frame)
     init_thread.start()
-    if collect_stats:
-        stats_thread = t_sendstats(frame)
-        stats_thread.start()
     frame.Show()
     app.MainLoop()

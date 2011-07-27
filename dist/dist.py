@@ -5,11 +5,11 @@ import shutil
 import subprocess
 exec(open("gui.py", "r").read().split('\n')[1])
 dir = "files/groove-dl_%sall/" % version
-cmdbuild = "python %s/compile.py %s" % (os.getcwd(), dir)
+cmdbuild = ["python", "%s/compile.py" % os.getcwd(), "%s" % dir]
 shutil.rmtree(dir, True)
 shutil.rmtree("build", True)
 shutil.rmtree("files/groove-dl_%s.exe" % version, True) 
-if sys.platform == "linux2": cmdbuild = "wine " + cmdbuild
+if sys.platform == "linux2": cmdbuild = ["wine"] + cmdbuild
 try: os.makedirs(dir)
 except: pass
 shutil.copyfile("../misc/readme.txt", dir + "readme.txt")
@@ -21,9 +21,9 @@ if sys.platform == "win32":
 if sys.platform == "linux2":
     cmdmerge = "cat ../../misc/7zsd.sfx ../../misc/sfxconfig.txt groove-dl_%sall.7z > %s.exe" % (version, filename)
 try:
-    p = subprocess.Popen(cmdbuild.split(), cwd=os.getcwd())
+    p = subprocess.Popen(cmdbuild, cwd=os.getcwd())
     os.chdir(dir)
-    print cmdbuild; assert p.wait() == 0
+    print ' '.join(cmdbuild); assert p.wait() == 0
     print cmdarchive; assert os.system(cmdarchive) == 0
     os.chdir('..')
     print os.getcwd()
