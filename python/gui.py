@@ -289,7 +289,7 @@ class t_download(threading.Thread):
             self.t = time.time()
             self.beg = self.t
             self.lastCount = 0
-            urlretrieve("http://" + key["result"]["ip"] + "/stream.php", os.path.join(dest, self.download["filename"]), self.hook, "streamKey="+key["result"]["streamKey"])
+            urlretrieve("http://" + key["result"][str(self.songid)]["ip"] + "/stream.php", os.path.join(dest, self.download["filename"]), self.hook, "streamKey="+key["result"][str(self.songid)]["streamKey"])
         except Exception, ex:
             if ex.args[0] == "Cancelled":
                 os.remove(os.path.join(dest, self.download["filename"]))

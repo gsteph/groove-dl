@@ -13,28 +13,28 @@ if sys.version_info[1] >= 6:  import json
 else: import simplejson as json
 
 _useragent = "Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1"
-_referer = "http://grooveshark.com/JSQueue.swf?20110216.04"
+_referer = "http://grooveshark.com/JSQueue.swf?20110725.01"
 _token = None
 
 h = {}
-h["Country"] = {}
-h["Country"]["CC1"] = "0"
-h["Country"]["CC2"] = "0"
-h["Country"]["CC3"] = "0"
-h["Country"]["CC4"] = "0"
-h["Country"]["ID"] = "1"
+h["country"] = {}
+h["country"]["CC1"] = "0"
+h["country"]["CC2"] = "0"
+h["country"]["CC3"] = "0"
+h["country"]["CC4"] = "0"
+h["country"]["ID"] = "1"
 h["privacy"] = 0
 h["session"] = None
-h["uuid"] = str(uuid.uuid4())
+h["uuid"] = str.upper(str(uuid.uuid4()))
 
 entrystring = \
 """A Grooveshark song downloader in python
 by George Stephanos <gaf.stephanos@gmail.com>
 """
 
-def prepToken(method):
+def prepToken(method, secret):
     rnd = (''.join(random.choice(string.hexdigits) for x in range(6))).lower()
-    return rnd + hashlib.sha1(method + ":" + _token + ":quitStealinMahShit:" + rnd).hexdigest()
+    return rnd + hashlib.sha1(method + ":" + _token + secret + rnd).hexdigest()
 
 def getToken():
     global h, _token
@@ -44,7 +44,7 @@ def getToken():
     p["method"] = "getCommunicationToken"
     p["header"] = h
     p["header"]["client"] = "htmlshark"
-    p["header"]["clientRevision"] = "20101222.35"
+    p["header"]["clientRevision"] = "20110606"
     conn = httplib.HTTPConnection("grooveshark.com")
     conn.request("POST", "/more.php", json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
     _token = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]
@@ -56,11 +56,16 @@ def getSearchResultsEx(query, what="Songs"):
     p["parameters"]["query"] = query
     p["header"] = h
     p["header"]["client"] = "htmlshark"
-    p["header"]["clientRevision"] = "20101222"
-    p["header"]["token"] = prepToken("getSearchResultsEx")
+    p["header"]["clientRevision"] = "20110606"
+    p["header"]["token"] = prepToken("getSearchResultsEx", ":backToTheScienceLab:")
     p["method"] = "getSearchResultsEx"
     conn = httplib.HTTPConnection("grooveshark.com")
-    conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer":"http://grooveshark.com/", "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
+    conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), 
+								 {"User-Agent": _useragent, 
+								  "Referer":"http://grooveshark.com/", 
+								  "Content-Type":"application/json", 
+								  "Accept-Encoding":"gzip", 
+								  "Cookie":"PHPSESSID=" + h["session"]})
     j = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())
     try:
         return j["result"]["result"]["Songs"]
@@ -74,8 +79,8 @@ def artistGetSongsEx(id, isVerified):
     p["parameters"]["isVerifiedOrPopular"] = isVerified
     p["header"] = h
     p["header"]["client"] = "htmlshark"
-    p["header"]["clientRevision"] = "20101222"
-    p["header"]["token"] = prepToken("artistGetSongsEx")
+    p["header"]["clientRevision"] = "20110606"
+    p["header"]["token"] = prepToken("artistGetSongsEx", ":backToTheScienceLab:")
     p["method"] = "artistGetSongsEx"
     conn = httplib.HTTPConnection("grooveshark.com")
     conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
@@ -86,16 +91,18 @@ def getStreamKeyFromSongIDEx(id):
     p["parameters"] = {}
     p["parameters"]["mobile"] = "false"
     p["parameters"]["prefetch"] = "false"
-    p["parameters"]["songID"] = id
-    p["parameters"]["country"] = h["Country"]
+    p["parameters"]["songIDs"] = id
+    p["parameters"]["country"] = h["country"]
     p["header"] = h
     p["header"]["client"] = "jsqueue"
-    p["header"]["clientRevision"] = "20101012.37"
-    p["header"]["token"] = prepToken("getStreamKeyFromSongIDEx")
-    p["method"] = "getStreamKeyFromSongIDEx"
+    p["header"]["clientRevision"] = "20110606.04"
+    p["header"]["token"] = prepToken("getStreamKeysFromSongIDs", ":bewareOfBearsharktopus:")
+    p["method"] = "getStreamKeysFromSongIDs"
     conn = httplib.HTTPConnection("grooveshark.com")
-    conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
-    return json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())
+    conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Accept-Encoding":"gzip", "Content-Type":"", "Cookie":"PHPSESSID=" + h["session"]})
+    j = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())
+    print j
+    return j
 
 def header_cb(buf):
     global h
