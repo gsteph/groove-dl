@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "0.96.1"
+version = "0.96.2"
 import sys
 import os
 import shutil
@@ -11,18 +11,18 @@ def handle_exception(type, value, traceback):
 	return sys.__excepthook__(type, value, traceback)
 
 class Logger(object):
-    def __init__(self):
-        self.terminal = sys.stdout
-        self.log = open("stdout.log", "w")
-        sys.stderr = open("stderr.log", "w")
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message) 
-        self.log.flush()
-    def close(self):
+	def __init__(self):
+		self.terminal = sys.stdout
+		self.log = open("stdout.log", "w")
+		sys.stderr = open("stderr.log", "w")
+	def write(self, message):
+		self.terminal.write(message)
+		self.log.write(message) 
+		self.log.flush()
+	def close(self):
 		self.log.close()
 		sys.stderr.close()
-        
+		
 sys.excepthook = handle_exception
 sys.stdout = Logger()
 
@@ -225,10 +225,12 @@ class MyFrame(wx.Frame):
 		if (event == ID_DOWNLOAD) or (event.GetId() == ID_DOWNLOAD):
 			if self.lbl_query.GetLabel() == "  Song:  ":
 				lst = self.lst_results
+				name = 'SongName'
 			elif self.lbl_query.GetLabel() == "  Artist:  ":
 				lst = self.lst_songs
+				name = 'Name'
 			for song in lst.GetSelectedObjects():
-				filename = "%s - %s.mp3" % (strip(song["ArtistName"], "<>:\"/\|?*"), strip(song["SongName"], "<>:\"/\|?*"))
+				filename = "%s - %s.mp3" % (strip(song["ArtistName"], "<>:\"/\|?*"), strip(song[name], "<>:\"/\|?*"))
 				t = t_download(self, song)
 				t.download = {"progress":"Initializing", "thread":t, "filename":filename, "album":song["AlbumName"]}
 				self.downloads.append(t.download)
@@ -298,7 +300,8 @@ class t_download(threading.Thread):
 		self.frame = frame
 		self.songid = song["SongID"]
 		self.song = song
-		self.duration = float(song["EstimateDuration"])
+		try: self.duration = float(song["EstimateDuration"])
+		except: self.duration = 0
 		self.cancelled = False
 	def run(self):
 		try: os.makedirs(dest)
