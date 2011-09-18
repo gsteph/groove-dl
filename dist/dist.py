@@ -24,6 +24,7 @@ try:
     p = subprocess.Popen(cmdbuild, cwd=os.getcwd())
     os.chdir(dir)
     print ' '.join(cmdbuild); assert p.wait() == 0
+    os.system('upx -9 *.exe *.dll modules\\*.pyd modules\\*.dll')
     print cmdarchive; assert os.system(cmdarchive) == 0
     os.chdir('..')
     print os.getcwd()

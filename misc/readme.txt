@@ -1,14 +1,13 @@
-Welcome to the Grooveshark downloader!
+Welcome to JTR's Grooveshark downloader!
 
 Follow these instructions to download your favorite songs in no time:
-    1) Click on groove-dl.
+    1) Click on groove.
     2) Type the name of the song that you want and hit Enter.
-    3) Double click on the song you want.
-	4) Wait for it to download and congratulations!
+    3) Double click the song you want, wait till it gets to you.
+	4) Double click it in the downloads table and your default player will open to play the song.
 
-You will find the downloaded songs in the Songs folder right beside the downloader.
-If you want to change the destination directory, open settings.ini and type the address
-in place of Songs.
+You will find the downloaded songs in My Music.
+If you want to change the destination directory, click "Choose Destination".
 
 Enjoy :)
 
