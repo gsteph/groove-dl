@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "0.96.2"
+version = "0.96.3"
 import sys
 import os
 import shutil
@@ -230,7 +230,13 @@ class MyFrame(wx.Frame):
 				lst = self.lst_songs
 				name = 'Name'
 			for song in lst.GetSelectedObjects():
-				filename = "%s - %s.mp3" % (strip(song["ArtistName"], "<>:\"/\|?*"), strip(song[name], "<>:\"/\|?*"))
+				_filename = "%s - %s" % (strip(song["ArtistName"], "<>:\"/\|?*"), strip(song[name], "<>:\"/\|?*"))
+				c = 2
+				filename = _filename
+				while os.path.exists(os.path.join(dest, filename + '.mp3')):
+					filename = _filename + ' (%d)' % c
+					c += 1
+				filename += '.mp3'
 				t = t_download(self, song)
 				t.download = {"progress":"Initializing", "thread":t, "filename":filename, "album":song["AlbumName"]}
 				self.downloads.append(t.download)
