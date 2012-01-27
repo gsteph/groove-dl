@@ -1,9 +1,12 @@
 #!/usr/bin/env python
-version = "0.96.5"
+version = "0.97"
 import sys
 import os
 import shutil
 import ctypes
+import StringIO
+import base64
+
 MessageBox = ctypes.windll.user32.MessageBoxA
 
 def handle_exception(type, value, traceback):
@@ -26,6 +29,8 @@ class Logger(object):
 sys.excepthook = handle_exception
 sys.stdout = Logger()
 
+fbicon = StringIO.StringIO(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAMAAADzapwJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAHsUExURTdVmjdWnDhXnThXnjhYnzlYoDlYoTlZojpaozpapDpbpTpbpjtbpz5dpDtcqDtcqTxdqjxdqzxeqzxerDxfrT1frj1grj1grz1gsD1hsT5hsj5isj5isz5itD9jtT9jtj9jtz9ktj9ktz9kuEVlq0ppqkpprEFktUBkt0BkuEBluUBlukJmuUBmukBmu0BmvEFnvUFnvkJnv0NovEJov0Rpv0losEprsU9wtVV1tVV1t1BwuFN0uVZ3vFh1uFh2uVl4vFt5vV9/vkJowEJowUNpwkNpw0NqxENqxUVrwkRrxkRrx0ZsxkRryERsyEVsyUVty0duyUVtzEZuzkhvykhvzEdw0Udx0klx0FB2z1F30lJ41FJ51WKCwWKDwmODw2OExGOExWSEwWSEwmWFw2WFxGaGxGaGxWaHxmiIxWiIxmiJx2uKx2yKxWuLyGuLyW6OynKSzXKSznWTzHSTznWUz3qWzH6ZznWV0HaW0HaW0XiX0XiX0niX03qZ0nmY036a0Hya0oaczoCb0Ied0Iee0oif1Iah1Iig1omg2Imh2Yqi24qi3JSlzJWmzpWn0JCo1Zep1Jyx2q2/4K6/4bHB4bLD47PE5L3I4r3J48PQ6cbR6c3Y7e7y+fDz+fDz+vL1+vv8/vz8/v7+/9NNdWAAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAadEVYdFNvZnR3YXJlAFBhaW50Lk5FVCB2My41LjEwMPRyoQAAARdJREFUeNpd0F1Kw1AQBeA5M5M2jX+1RUWfXZfgLsRFuQF3IQjaR0EFHwQh2pqfO54kFaKHQMJ3z52B4NpU/qdNXqe/ZJO2jsabZmTHR2aQcgWPkc5PTZiI8G2ZCyBn1I4b8UoIigS+O63L9FIJ24AEBNSM/HkfjJVfZZFa5mC5P+fZdzWLuwfWtDhZwnGRyzZvV8lVtXp+haKV38BAZoyMMWNK7Pk8wyWP3m9i89iy7XSFPUkR5I9Vak1c3chGl0wYNSCB2Nd9CusZpqkREp8shwPa886G/8/NOuWKQwxDMqwbVpncbaGADUNkto5OC6qZT4bZC+4hwthTTjLvWRdQuO4COudigw2cwvYc4Cf6K3EbEbUoAj/MO1Z/pruB0wAAAABJRU5ErkJggg=='))
+
 if sys.platform == 'win32': 
 	dest = os.getenv('USERPROFILE') + "\\My Documents\\My Music"; conf = ''
 	try: os.makedirs(conf)
@@ -41,7 +46,6 @@ elif sys.platform == 'linux2':
 	except: pass
 import wx
 import wx.lib.newevent
-import base64
 import groove
 import threading
 import httplib
@@ -49,6 +53,7 @@ import time
 import subprocess
 import ConfigParser
 import tempfile
+import webbrowser
 from urllib import urlretrieve
 from ObjectListView import ObjectListView, GroupListView, ColumnDefn
 
@@ -91,6 +96,7 @@ class MyFrame(wx.Frame):
 		self.lbl_query = wx.StaticText(self, -1, "  Song:  ", style=wx.ALIGN_CENTRE)
 		self.lbl_query.SetFont(font)
 		self.txt_query = wx.TextCtrl(self, 1, "", style=wx.TE_PROCESS_ENTER)
+		self.fb = wx.StaticBitmap(self, bitmap=wx.BitmapFromImage(wx.ImageFromStream(fbicon, wx.BITMAP_TYPE_PNG)), size=(22,22))
 		self.folder_chooser = wx.Button(self, -1, "Choose Destination", size=[-1, self.txt_query.GetSize().GetHeight()])
 		self.lst_results = ObjectListView(self, -1, style=wx.LC_REPORT)
 		self.lst_downloads = GroupListView(self, -1, style=wx.LC_REPORT)
@@ -111,6 +117,7 @@ class MyFrame(wx.Frame):
 		self.Bind(wx.EVT_BUTTON, self._ChooseFolder, self.folder_chooser)
 		self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._ObjectSelected, self.lst_artists)
 		self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._ObjectSelected, self.lst_albums)
+		self.fb.Bind(wx.EVT_LEFT_DOWN, self._FBClick)
 		self.txt_query.Bind(wx.EVT_KEY_DOWN, self._Tab)
 		self.Bind(wx.EVT_CLOSE, self._Close)
 		self.menu_results = {}
@@ -174,6 +181,7 @@ class MyFrame(wx.Frame):
 		self.sizer_2.Add(self.lbl_query, 0, wx.ALIGN_CENTER, 0)
 		self.sizer_2.Add(self.txt_query, 2, 0, 0)
 		self.sizer_2.Add(self.folder_chooser, 0, wx.ALIGN_CENTER, 0)
+		self.sizer_2.Add(self.fb, 0, wx.ALIGN_CENTER, 0)
 		self.sizer_1.Add(self.sizer_2, 0, wx.EXPAND, 0)
 		self.sizer_1.Add(self.lst_results, 2, wx.EXPAND, 0)
 		self.sizer_1.Add(self.sizer_3, 2, wx.EXPAND, 0)
@@ -195,6 +203,8 @@ class MyFrame(wx.Frame):
 		search_thread.start()
 	def _ExecFunc(self, event):
 		event.func(self, event)
+	def _FBClick(self, event):
+		webbrowser.open_new_tab('http://www.facebook.com/groove.dl')
 	def _ResultsContext(self, event):
 		menu = wx.Menu()
 		menu.Append(ID_DOWNLOAD, "Download")

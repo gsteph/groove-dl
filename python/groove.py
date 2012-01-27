@@ -101,7 +101,6 @@ def getStreamKeyFromSongIDEx(id):
     conn = httplib.HTTPConnection("grooveshark.com")
     conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Accept-Encoding":"gzip", "Content-Type":"", "Cookie":"PHPSESSID=" + h["session"]})
     j = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())
-    print j
     return j
 
 def header_cb(buf):
@@ -126,7 +125,7 @@ if __name__ == "__main__":
     init()
     getToken()
     m = 0
-    s = getSearchResultsEx(sys.argv[1])
+    s = getResultsFromSearch(sys.argv[1])
     for l in s:
         m += 1
         print str(m) + ': "' + l["SongName"] + '" by "' + l["ArtistName"] + '" (' + l["AlbumName"] + ')'
@@ -135,6 +134,8 @@ if __name__ == "__main__":
     if songid == "" or songid == "q": exit()
     songid = eval(songid)
     stream = getStreamKeyFromSongIDEx(s[songid]["SongID"])
-    s =  'wget --user-agent="%s" --referer=%s --post-data=streamKey=%s -O "%s - %s.mp3" "http://%s/stream.php"' % (_useragent, _referer, stream["result"]["streamKey"], s[songid]["ArtistName"], s[songid]["SongName"], stream["result"]["ip"])
+    for k,v in stream["result"].iteritems():
+		stream=v
+    s =  'wget --user-agent="%s" --referer=%s --post-data=streamKey=%s -O "%s - %s.mp3" "http://%s/stream.php"' % (_useragent, _referer, stream["streamKey"], s[songid]["ArtistName"], s[songid]["SongName"], stream["ip"])
     p = subprocess.Popen(s, shell=True)
     p.wait()
