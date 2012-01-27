@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "0.96.3"
+version = "0.96.5"
 import sys
 import os
 import shutil
@@ -358,7 +358,7 @@ class t_search_object(threading.Thread):
 		if self.artist == None:
 			wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=False))
 			wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1='Searching for \"' + self.query + '\"...'))
-			self.frame.results = groove.getSearchResultsEx(self.query, "Artists")
+			self.frame.results = groove.getResultsFromSearch(self.query, "Artists")
 			if self.frame.results != []:
 				for a in self.frame.results:
 					b = Artist()
@@ -418,7 +418,7 @@ class t_search_flat(threading.Thread):
 	def run(self):
 		wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=False))
 		wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1='Searching for \"' + self.query + '\"...'))
-		self.frame.results = groove.getSearchResultsEx(self.query, "Songs")
+		self.frame.results = groove.getResultsFromSearch(self.query, "Songs")
 		if self.frame.results != []:
 			def f(frame, event): frame.lst_results.SetObjects(frame.results)
 			wx.PostEvent(self.frame, evtExecFunc(func=f))
