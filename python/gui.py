@@ -3,11 +3,8 @@ version = "0.97"
 import sys
 import os
 import shutil
-import ctypes
 import StringIO
 import base64
-
-MessageBox = ctypes.windll.user32.MessageBoxA
 
 def handle_exception(type, value, traceback):
 	MessageBox(None, 'An error occured. When reporting the bug, please supply stdout.log and stderr.log.', 'Error', 0x10)
@@ -26,13 +23,14 @@ class Logger(object):
 		self.log.close()
 		sys.stderr.close()
 		
-sys.excepthook = handle_exception
-sys.stdout = Logger()
-
 fbicon = StringIO.StringIO(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAMAAADzapwJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAHsUExURTdVmjdWnDhXnThXnjhYnzlYoDlYoTlZojpaozpapDpbpTpbpjtbpz5dpDtcqDtcqTxdqjxdqzxeqzxerDxfrT1frj1grj1grz1gsD1hsT5hsj5isj5isz5itD9jtT9jtj9jtz9ktj9ktz9kuEVlq0ppqkpprEFktUBkt0BkuEBluUBlukJmuUBmukBmu0BmvEFnvUFnvkJnv0NovEJov0Rpv0losEprsU9wtVV1tVV1t1BwuFN0uVZ3vFh1uFh2uVl4vFt5vV9/vkJowEJowUNpwkNpw0NqxENqxUVrwkRrxkRrx0ZsxkRryERsyEVsyUVty0duyUVtzEZuzkhvykhvzEdw0Udx0klx0FB2z1F30lJ41FJ51WKCwWKDwmODw2OExGOExWSEwWSEwmWFw2WFxGaGxGaGxWaHxmiIxWiIxmiJx2uKx2yKxWuLyGuLyW6OynKSzXKSznWTzHSTznWUz3qWzH6ZznWV0HaW0HaW0XiX0XiX0niX03qZ0nmY036a0Hya0oaczoCb0Ied0Iee0oif1Iah1Iig1omg2Imh2Yqi24qi3JSlzJWmzpWn0JCo1Zep1Jyx2q2/4K6/4bHB4bLD47PE5L3I4r3J48PQ6cbR6c3Y7e7y+fDz+fDz+vL1+vv8/vz8/v7+/9NNdWAAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAadEVYdFNvZnR3YXJlAFBhaW50Lk5FVCB2My41LjEwMPRyoQAAARdJREFUeNpd0F1Kw1AQBeA5M5M2jX+1RUWfXZfgLsRFuQF3IQjaR0EFHwQh2pqfO54kFaKHQMJ3z52B4NpU/qdNXqe/ZJO2jsabZmTHR2aQcgWPkc5PTZiI8G2ZCyBn1I4b8UoIigS+O63L9FIJ24AEBNSM/HkfjJVfZZFa5mC5P+fZdzWLuwfWtDhZwnGRyzZvV8lVtXp+haKV38BAZoyMMWNK7Pk8wyWP3m9i89iy7XSFPUkR5I9Vak1c3chGl0wYNSCB2Nd9CusZpqkREp8shwPa886G/8/NOuWKQwxDMqwbVpncbaGADUNkto5OC6qZT4bZC+4hwthTTjLvWRdQuO4COudigw2cwvYc4Cf6K3EbEbUoAj/MO1Z/pruB0wAAAABJRU5ErkJggg=='))
 
 if sys.platform == 'win32': 
-	dest = os.getenv('USERPROFILE') + "\\My Documents\\My Music"; conf = ''
+        import ctypes
+        MessageBox = ctypes.windll.user32.MessageBoxA
+        sys.stdout = Logger()
+        sys.excepthook = handle_exception
+        dest = os.getenv('USERPROFILE') + "\\My Documents\\My Music"; conf = ''
 	try: os.makedirs(conf)
 	except: pass
 	try: 
