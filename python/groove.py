@@ -45,7 +45,7 @@ def getToken():
     p["header"] = h
     p["header"]["client"] = "htmlshark"
     p["header"]["clientRevision"] = "20110906"
-    conn = httplib.HTTPConnection("grooveshark.com")
+    conn = httplib.HTTPSConnection("grooveshark.com")
     conn.request("POST", "/more.php", json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
     _token = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]
 

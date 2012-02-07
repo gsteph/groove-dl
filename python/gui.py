@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "0.97"
+version = "0.97.1"
 import sys
 import os
 import shutil
