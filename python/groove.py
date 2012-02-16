@@ -132,7 +132,7 @@ if __name__ == "__main__":
         if m == 10: break
     songid = raw_input("Enter the Song ID you wish to download or (q) to exit: ")
     if songid == "" or songid == "q": exit()
-    songid = eval(songid)
+    songid = eval(songid)-1
     stream = getStreamKeyFromSongIDEx(s[songid]["SongID"])
     for k,v in stream["result"].iteritems():
 		stream=v
