@@ -12,8 +12,8 @@ import gzip
 if sys.version_info[1] >= 6:  import json
 else: import simplejson as json
 
-_useragent = "Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1"
-_referer = "http://grooveshark.com/JSQueue.swf?20110725.01"
+_useragent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11"
+_referer = "http://grooveshark.com/JSQueue.swf?20120220.01"
 _token = None
 
 h = {}
@@ -44,10 +44,11 @@ def getToken():
     p["method"] = "getCommunicationToken"
     p["header"] = h
     p["header"]["client"] = "htmlshark"
-    p["header"]["clientRevision"] = "20110906"
+    p["header"]["clientRevision"] = "20120220"
     conn = httplib.HTTPSConnection("grooveshark.com")
     conn.request("POST", "/more.php", json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
     _token = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]
+    print _token
 
 def getResultsFromSearch(query, what="Songs"):
     p = {}
@@ -56,8 +57,8 @@ def getResultsFromSearch(query, what="Songs"):
     p["parameters"]["query"] = query
     p["header"] = h
     p["header"]["client"] = "htmlshark"
-    p["header"]["clientRevision"] = "20110906"
-    p["header"]["token"] = prepToken("getResultsFromSearch", ":imOnAHorse:")
+    p["header"]["clientRevision"] = "20120220"
+    p["header"]["token"] = prepToken("getResultsFromSearch", ":jayLikeWater:")
     p["method"] = "getResultsFromSearch"
     conn = httplib.HTTPConnection("grooveshark.com")
     conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), 
@@ -67,6 +68,7 @@ def getResultsFromSearch(query, what="Songs"):
 								  "Accept-Encoding":"gzip", 
 								  "Cookie":"PHPSESSID=" + h["session"]})
     j = json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())
+    print j
     try:
         return j["result"]["result"]["Songs"]
     except:
@@ -79,8 +81,8 @@ def artistGetSongsEx(id, isVerified):
     p["parameters"]["isVerifiedOrPopular"] = isVerified
     p["header"] = h
     p["header"]["client"] = "htmlshark"
-    p["header"]["clientRevision"] = "20110906"
-    p["header"]["token"] = prepToken("artistGetSongsEx", ":imOnAHorse:")
+    p["header"]["clientRevision"] = "20120220"
+    p["header"]["token"] = prepToken("artistGetSongsEx", ":jayLikeWater:")
     p["method"] = "artistGetSongsEx"
     conn = httplib.HTTPConnection("grooveshark.com")
     conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Content-Type":"", "Accept-Encoding":"gzip", "Cookie":"PHPSESSID=" + h["session"]})
@@ -95,8 +97,8 @@ def getStreamKeyFromSongIDEx(id):
     p["parameters"]["country"] = h["country"]
     p["header"] = h
     p["header"]["client"] = "jsqueue"
-    p["header"]["clientRevision"] = "20110906.04"
-    p["header"]["token"] = prepToken("getStreamKeysFromSongIDs", ":theTicketsAreNowDiamonds:")
+    p["header"]["clientRevision"] = "20120220.01"
+    p["header"]["token"] = prepToken("getStreamKeysFromSongIDs", ":bangersAndMash:")
     p["method"] = "getStreamKeysFromSongIDs"
     conn = httplib.HTTPConnection("grooveshark.com")
     conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), {"User-Agent": _useragent, "Referer": _referer, "Accept-Encoding":"gzip", "Content-Type":"", "Cookie":"PHPSESSID=" + h["session"]})
