@@ -39,10 +39,11 @@ if sys.platform == 'win32':
         os.remove("_python27.dll")
         shutil.rmtree("_modules")
     except: pass
-elif sys.platform == 'linux2': 
+elif sys.platform == 'linux2' or sys.platform == 'darwin': 
     dest = os.getenv('HOME') + '/Music'; conf = os.getenv('HOME') + '/.groove'
     try: os.makedirs(conf)
     except: pass
+
 import wx
 import wx.lib.newevent
 import groove
