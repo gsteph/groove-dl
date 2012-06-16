@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=JTR's Grooveshark Downloader
+Comment=Download music from Grooveshark
+Exec=groove-dl
+Icon=groove-dl
+Terminal=false
+Type=Application
+Categories=Network;

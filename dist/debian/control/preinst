@@ -1,0 +1,17 @@
+#!/bin/sh
+python -c "import ObjectListView" 2> /dev/null
+if [ "$?" -ne "0" ]; then
+        echo "Fetching ObjectListView-1.2 ..."
+        cd /tmp
+        wget -q http://sourceforge.net/projects/objectlistview/files/objectlistview-python/v1.2/ObjectListView-1.2-without-graphics.zip/download -O OLV
+        if [ "$?" -ne "0" ]; then
+                echo "Unable to fetch ObjectListView-1.2. Please check your internet connection."
+                exit 1
+        fi
+        unzip -q OLV
+        cd ObjectListView-1.2
+        python setup.py install
+        cd ../
+        rm -rf ObjectListView*
+        rm -rf OLV
+fi

@@ -1,0 +1,9 @@
+Package: groove-dl
+Version: 0.97.2-1
+Section: python
+Priority: optional
+Architecture: all
+Depends: python (>=2.5), unzip, wget, python-wxgtk2.8
+Installed-Size: 124
+Maintainer: George Stephanos <gaf.stephanos@gmail.com>
+Description: A downloader to Grooveshark's library of music.

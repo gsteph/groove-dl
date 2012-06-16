@@ -28,6 +28,7 @@ class Logger(object):
         
 fbicon = StringIO.StringIO(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAMAAADzapwJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAHsUExURTdVmjdWnDhXnThXnjhYnzlYoDlYoTlZojpaozpapDpbpTpbpjtbpz5dpDtcqDtcqTxdqjxdqzxeqzxerDxfrT1frj1grj1grz1gsD1hsT5hsj5isj5isz5itD9jtT9jtj9jtz9ktj9ktz9kuEVlq0ppqkpprEFktUBkt0BkuEBluUBlukJmuUBmukBmu0BmvEFnvUFnvkJnv0NovEJov0Rpv0losEprsU9wtVV1tVV1t1BwuFN0uVZ3vFh1uFh2uVl4vFt5vV9/vkJowEJowUNpwkNpw0NqxENqxUVrwkRrxkRrx0ZsxkRryERsyEVsyUVty0duyUVtzEZuzkhvykhvzEdw0Udx0klx0FB2z1F30lJ41FJ51WKCwWKDwmODw2OExGOExWSEwWSEwmWFw2WFxGaGxGaGxWaHxmiIxWiIxmiJx2uKx2yKxWuLyGuLyW6OynKSzXKSznWTzHSTznWUz3qWzH6ZznWV0HaW0HaW0XiX0XiX0niX03qZ0nmY036a0Hya0oaczoCb0Ied0Iee0oif1Iah1Iig1omg2Imh2Yqi24qi3JSlzJWmzpWn0JCo1Zep1Jyx2q2/4K6/4bHB4bLD47PE5L3I4r3J48PQ6cbR6c3Y7e7y+fDz+fDz+vL1+vv8/vz8/v7+/9NNdWAAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAadEVYdFNvZnR3YXJlAFBhaW50Lk5FVCB2My41LjEwMPRyoQAAARdJREFUeNpd0F1Kw1AQBeA5M5M2jX+1RUWfXZfgLsRFuQF3IQjaR0EFHwQh2pqfO54kFaKHQMJ3z52B4NpU/qdNXqe/ZJO2jsabZmTHR2aQcgWPkc5PTZiI8G2ZCyBn1I4b8UoIigS+O63L9FIJ24AEBNSM/HkfjJVfZZFa5mC5P+fZdzWLuwfWtDhZwnGRyzZvV8lVtXp+haKV38BAZoyMMWNK7Pk8wyWP3m9i89iy7XSFPUkR5I9Vak1c3chGl0wYNSCB2Nd9CusZpqkREp8shwPa886G/8/NOuWKQwxDMqwbVpncbaGADUNkto5OC6qZT4bZC+4hwthTTjLvWRdQuO4COudigw2cwvYc4Cf6K3EbEbUoAj/MO1Z/pruB0wAAAABJRU5ErkJggg=='))
 
+format = 'artist - title'
 if sys.platform == 'win32':
     sys.stdout = Logger()
     sys.excepthook = handle_exception
@@ -67,7 +68,7 @@ def SetFocus(frame, event): event.attr1.SetFocus()
 evtExecFunc, EVT_EXEC_FUNC = wx.lib.newevent.NewEvent()
 ID_DOWNLOAD = wx.NewId()
 ID_REMOVE = wx.NewId()
-emptylistmsg = "Type into above text field to search.\nTab to switch modes."
+emptylistmsg = "Type into the text field above to search.\nTab to switch modes."
 
 def strip(value, deletechars):
     for c in deletechars:
@@ -240,11 +241,13 @@ class MyFrame(wx.Frame):
                 lst = self.lst_songs
                 name = 'Name'
             for song in lst.GetSelectedObjects():
-                _filename = "%s - %s" % (strip(song["ArtistName"], "<>:\"/\|?*"), strip(song[name], "<>:\"/\|?*"))
+                filename = format
+                filename = filename.replace('artist', strip(song["ArtistName"], "<>:\"/\|?*"))
+                filename = filename.replace('title', strip(song[name], "<>:\"/\|?*"))
+                filename = filename.replace('album', strip(song["AlbumName"], "<>:\"/\|?*"))
                 c = 2
-                filename = _filename
-                while os.path.exists(os.path.join(dest, filename + '.mp3')):
-                    filename = _filename + ' (%d)' % c
+                while os.path.exists(os.path.join(dest, filename+'.mp3')):
+                    filename = filename + ' (%d)' % c
                     c += 1
                 filename += '.mp3'
                 t = t_download(self, song)
@@ -294,16 +297,19 @@ class MyFrame(wx.Frame):
     def _Close(self, event):
         l = 0
         for i in self.downloads:
-            if i["progress"] != "Completed":
+            if i["progress"] != "Completed" and i["progress"] != "Error":
                 l += 1
         if l > 0: 
             if wx.MessageDialog(self, "There are currently %d active downloads. Are you sure you want to cancel them and exit ?" % l, "Active downloads", wx.YES_NO|wx.CENTRE).ShowModal() == wx.ID_NO:
                 return
+        print "BWAH"
         for d in self.downloads:
             d["thread"].cancelled = True
         config = ConfigParser.RawConfigParser()
         config.add_section("groove-dl")
         config.set("groove-dl", "dest", dest)
+        print "BWAH"
+        config.set("groove-dl", "format", format)
         config.write(open(os.path.join(conf, "settings.ini"), "wb"))
         sys.stdout.close()
         sys.stderr.close()
@@ -323,23 +329,18 @@ class t_download(threading.Thread):
         try: os.makedirs(dest)
         except: pass
         try:
-            key = groove.getStreamKeyFromSongIDEx(self.songid)
+            key = groove.getStreamKeyFromSongIDs(self.songid)
             self.t = time.time()
             self.beg = self.t
             self.lastCount = 0
-            urlretrieve("http://" + key["result"][str(self.songid)]["ip"] + "/stream.php", os.path.join(dest, self.download["filename"]), self.hook, "streamKey="+key["result"][str(self.songid)]["streamKey"])
+            urlretrieve("http://" + key[str(self.songid)]["ip"] + "/stream.php", os.path.join(dest, self.download["filename"]), self.hook, "streamKey="+key[str(self.songid)]["streamKey"])
         except Exception, ex:
             if ex.args[0] == "Cancelled":
                 os.remove(os.path.join(dest, self.download["filename"]))
                 return
-            elif key["result"] == []:
-                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Failed to retreive '%s'. Server error." % self.song["SongName"]))
-                def f(frame, event): 
-                    frame.lst_downloads.RemoveObject(self.download)
-                    frame.downloads.remove(self.download)
-                wx.PostEvent(self.frame, evtExecFunc(func=f))
-                time.sleep(2)
-                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
+            elif key == [] or key[str(self.songid)] == []:
+                self.download["progress"] = "Error"
+                wx.PostEvent(self.frame, evtExecFunc(func=UpdateItem, attr1=self.download))
 
     def hook(self, countBlocks, Block, TotalSize):
         if self.cancelled: raise Exception("Cancelled")
@@ -479,12 +480,10 @@ class t_init(threading.Thread):
                 wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=False))
                 if sys.platform == "win32": self.update()
                 wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Initializing..."))
-                groove.init()
-                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Getting Token..."))
                 groove.getToken()
                 wx.PostEvent(self.frame, evtExecFunc(func=EnableFrame, attr1=True))
                 wx.PostEvent(self.frame, evtExecFunc(func=SetFocus, attr1=self.frame.txt_query))
-                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Ready"))
+                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Online"))
                 time.sleep(300)
             except Exception, e:
                 if e.args[0] == 11004:
@@ -493,12 +492,13 @@ class t_init(threading.Thread):
                 else: print e.args
 
 def main():
-    global dest
+    global dest,format
     config = ConfigParser.RawConfigParser()
     if os.path.exists(os.path.join(conf, "settings.ini")):
         try:
             config.read(os.path.join(conf, "settings.ini"))
             dest = config.get("groove-dl", "dest")
+            format = config.get("groove-dl", "format")
         except:
             pass
     app = wx.PySimpleApp(0)
