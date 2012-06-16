@@ -322,7 +322,7 @@ class t_download(threading.Thread):
         self.frame = frame
         self.songid = song["SongID"]
         self.song = song
-        try: self.duration = float(song["EstimateDuration"])
+        try: self.duration = float(song["AvgDuration"])
         except: self.duration = 0
         self.cancelled = False
     def run(self):
