@@ -1,1 +1,0 @@
-../python/gui.py

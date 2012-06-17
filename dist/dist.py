@@ -3,6 +3,8 @@ import sys
 import os
 import shutil
 import subprocess
+shutil.copyfile('../python/gui.py', './gui.py')
+shutil.copyfile('../python/groove.py', './groove.py')
 exec(open("gui.py", "r").read().split('\n')[1])
 dir = "files/groove-dl_%sall/" % version
 cmdbuild = ["python", "%s/compile.py" % os.getcwd(), "%s" % dir]
