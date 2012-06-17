@@ -17,11 +17,11 @@ _useragent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like
 _token = None
 
 URL = "grooveshark.com" #The base URL of Grooveshark
-htmlclient = ('htmlshark', '20120312', 'reallyHotSauce', {"User-Agent":_useragent, "Content-Type":"application/json", "Accept-Encoding":"gzip"}) #This contains all the information connected to the htmlshark client
+htmlclient = ('htmlshark', '20120312', 'reallyHotSauce', {"User-Agent":_useragent, "Content-Type":"application/json", "Accept-Encoding":"gzip"}) #Contains all the information posted with the htmlshark client
 jsqueue = ['jsqueue', '20120312.08', 'circlesAndSquares']
-jsqueue.append({"User-Agent":_useragent, "Referer": 'http://%s/JSQueue.swf?%s' % (URL, jsqueue[1]), "Accept-Encoding":"gzip", "Content-Type":"application/json"}) #This (jsqueue) contains all the information specific to jsqueue
+jsqueue.append({"User-Agent":_useragent, "Referer": 'http://%s/JSQueue.swf?%s' % (URL, jsqueue[1]), "Accept-Encoding":"gzip", "Content-Type":"application/json"}) #Contains all the information specific to jsqueue
 
-#Setting the static header (Country, session and uuid)
+#Setting the static header (country, session and uuid)
 h = {}
 h["country"] = {}
 h["country"]["CC1"] = 72057594037927940
@@ -40,14 +40,14 @@ entrystring = \
 by George Stephanos <gaf.stephanos@gmail.com>
 """
 
-#Generate a token from the method and the secret string (this the string changes once in a while)
+#Generate a token from the method and the secret string (which changes once in a while)
 def prepToken(method, secret):
     rnd = (''.join(random.choice(string.hexdigits) for x in range(6))).lower()
     return rnd + hashlib.sha1('%s:%s:%s:%s' % (method, _token, secret, rnd)).hexdigest()
 
 #Fetch a queueID (right now we randomly generate it)
 def getQueueID():
-    return random.randint(1000000000000000000000,99999999999999999999999) #For now this will do
+    return random.randint(10000000000000000000000,99999999999999999999999) #For now this will do
 
 #Get the static token issued by sharkAttack!
 def getToken():
@@ -82,7 +82,7 @@ def getResultsFromSearch(query, what="Songs"):
     except:
         return j["result"]["result"]
 
-#? Something about artist (probably get's all the songs made by an artist)
+#Get all songs by a certain artist
 def artistGetSongsEx(id, isVerified):
     p = {}
     p["parameters"] = {}
@@ -111,7 +111,6 @@ def getStreamKeyFromSongIDs(id):
     p["header"]["clientRevision"] = jsqueue[1]
     p["header"]["token"] = prepToken("getStreamKeysFromSongIDs", jsqueue[2])
     p["method"] = "getStreamKeysFromSongIDs"
-    print json.JSONEncoder().encode(p)
     conn = httplib.HTTPConnection(URL)
     conn.request("POST", "/more.php?" + p["method"], json.JSONEncoder().encode(p), jsqueue[3])
     return json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]
@@ -123,11 +122,9 @@ def addSongsToQueue(songObj, songQueueID, source = "user"):
     queueObj["artistID"] = songObj["ArtistID"]
     queueObj["source"] = source
     queueObj["songQueueSongID"] = 1
-    
     p = {}
     p["parameters"] = {}
-    p["parameters"]["songIDsArtistIDs"] = []
-    p["parameters"]["songIDsArtistIDs"].append(queueObj)
+    p["parameters"]["songIDsArtistIDs"] = [queueObj]
     p["parameters"]["songQueueID"] = songQueueID
     p["header"] = h
     p["header"]["client"] = jsqueue[0]
@@ -189,7 +186,7 @@ def markSongDownloadedEx(streamServer, songID, streamKey):
     return json.JSONDecoder().decode(gzip.GzipFile(fileobj=(StringIO.StringIO(conn.getresponse().read()))).read())["result"]
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2: #Check if we were passed more than 1 parameters
+    if len(sys.argv) < 2: #Check if we were passed any parameters
         import gui
         gui.main() #Open the gui
         exit() #Close the command line
@@ -201,17 +198,16 @@ if __name__ == "__main__":
     print "Searching for '%s'..." % i
     m = 0
     s = getResultsFromSearch(i) #Get the result from the search
-    l = [('%s: "%s" by "%s" (%s)' % (str(m+1), l["SongName"], l["ArtistName"], l["AlbumName"])) for m,l in enumerate(s[:10])] #Iterate over the 10 first returned items, and add a tring to a list.
+    l = [('%s: "%s" by "%s" (%s)' % (str(m+1), l["SongName"], l["ArtistName"], l["AlbumName"])) for m,l in enumerate(s[:10])] #Iterate over the 10 first returned items, and produce descriptive strings.
     if l == []: #If the result was empty print a message and exit
         print "No results found"
         exit()
     else:
         print '\n'.join(l) #Print the results
-    songid = raw_input("Enter the Song ID you wish to download or (q) to exit: ") #Ask for input as to what we shoudl download
+    songid = raw_input("Enter the Song ID you wish to download or (q) to exit: ")
     if songid == "" or songid == "q": exit() #Exit if choice is empty or q
-    songid = eval(songid)-1 #Turn it into an int ans subtract one to fit it to the list index
-    queueID = getQueueID() #Get the queue ID
-    print "Adding song to player Queue"
+    songid = eval(songid)-1 #Turn it into an int and subtract one to fit it into the list index
+    queueID = getQueueID()
     addSongsToQueue(s[songid], queueID) #Add the song to the queue
     print "Retrieving stream key.."
     stream = getStreamKeyFromSongIDs(s[songid]["SongID"]) #Get the StreamKey for the selected song
@@ -220,18 +216,16 @@ if __name__ == "__main__":
     if stream == []:
         print "Failed"
         exit()
-    print "Starting timer" #Probably not needed, but i if the download takes over 30 seconds, why not? starts a timer that report the song as being played 30 seconds though if the download takes more than 30-35 seconds
-    markTimer = threading.Timer(30 + random.randint(0,5), markStreamKeyOver30Seconds, [s[songid]["SongID"], str(queueID), stream["ip"], stream["streamKey"]])
-    markTimer.start()
     cmd = 'wget --post-data=streamKey=%s -O "%s - %s.mp3" "http://%s/stream.php"' % (stream["streamKey"], s[songid]["ArtistName"], s[songid]["SongName"], stream["ip"]) #Run wget to download the song
     p = subprocess.Popen(cmd, shell=True)
+    markTimer = threading.Timer(30 + random.randint(0,5), markStreamKeyOver30Seconds, [s[songid]["SongID"], str(queueID), stream["ip"], stream["streamKey"]]) #Starts a timer that reports the song as being played for over 30-35 seconds. May not be needed.
+    markTimer.start()
     try:
-        p.wait()#Wait for wget to finish
-        print "Marking download as complete"
-        markSongDownloadedEx(stream["ip"], s[songid]["SongID"], stream["streamKey"]) #This is the important part, hopefully this will stop grooveshark from banning us (and take the load off their server) Mark the song as being downloaded
+        p.wait() #Wait for wget to finish
     except KeyboardInterrupt: #If we are interrupted by the user
         os.remove('%s - %s.mp3' % (s[songid]["ArtistName"], s[songid]["SongName"])) #Delete the song
-        print "Marking download as complete"
-        markSongDownloadedEx(stream["ip"], s[songid]["SongID"], stream["streamKey"]) #We do it here to be sure
         print "\nDownload cancelled. File deleted."
+    markTimer.cancel()
+    print "Marking song as completed"
+    markSongDownloadedEx(stream["ip"], s[songid]["SongID"], stream["streamKey"]) #This is the important part, hopefully this will stop grooveshark from banning us.
     #Natural Exit
