@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "0.97.3"
+version = "0.97.5"
 import sys
 import os
 import shutil
@@ -104,6 +104,7 @@ class MyFrame(wx.Frame):
         self.lst_artists = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.lst_albums = ObjectListView(self, -1, style=wx.LC_REPORT)
         self.lst_songs = ObjectListView(self, -1, style=wx.LC_REPORT)
+        self.lst_songs.ToggleWindowStyle(wx.HSCROLL)
         self.frame_statusbar = self.CreateStatusBar(1, wx.SB_RAISED)
         self.__set_properties()
         self.__do_layout()
@@ -131,7 +132,7 @@ class MyFrame(wx.Frame):
         else:
             if os.path.exists("groove.ico"): self.SetIcon(wx.Icon("groove.ico", wx.BITMAP_TYPE_ICO))
     def __set_properties(self):
-        self.SetTitle("JTR's Grooveshark Downloader v" + version)
+        self.SetTitle("groove-dl v" + version)
         self.SetSize((600, 400))
         self.frame_statusbar.SetStatusWidths([-1])
         frame_statusbar_fields = [""]
@@ -179,14 +180,14 @@ class MyFrame(wx.Frame):
         self.sizer_1 = wx.BoxSizer(wx.VERTICAL)
         self.sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_1.Add(self.sizer_2, 0, wx.EXPAND, 0)
+        self.sizer_1.Add(self.lst_results, 2, wx.EXPAND, 10)
+        self.sizer_1.Add(self.sizer_3, 2, wx.EXPAND, 0)
+        self.sizer_1.Add(self.lst_downloads, 1, wx.EXPAND, 0)
         self.sizer_2.Add(self.lbl_query, 0, wx.ALIGN_CENTER, 0)
         self.sizer_2.Add(self.txt_query, 2, 0, 0)
         self.sizer_2.Add(self.folder_chooser, 0, wx.ALIGN_CENTER, 0)
         self.sizer_2.Add(self.fb, 0, wx.ALIGN_CENTER, 0)
-        self.sizer_1.Add(self.sizer_2, 0, wx.EXPAND, 0)
-        self.sizer_1.Add(self.lst_results, 2, wx.EXPAND, 0)
-        self.sizer_1.Add(self.sizer_3, 2, wx.EXPAND, 0)
-        self.sizer_1.Add(self.lst_downloads, 1, wx.EXPAND, 0)
         self.sizer_3.Add(self.lst_artists, 1, wx.EXPAND, 0)
         self.sizer_3.Add(self.lst_albums, 1, wx.EXPAND, 0)
         self.sizer_3.Add(self.lst_songs, 2, wx.EXPAND, 0)
@@ -487,8 +488,10 @@ class t_init(threading.Thread):
                 time.sleep(300)
             except Exception, e:
                 if e.args[0] == 11004:
-                    wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Failed to connect. Waiting (2)"))
+                    wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Failed to connect."))
                     time.sleep(2)
+                    wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Retrying.."))
+                    time.sleep(1)
                 else: print e.args
 
 def main():
