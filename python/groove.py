@@ -17,8 +17,8 @@ _useragent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like
 _token = None
 
 URL = "grooveshark.com" #The base URL of Grooveshark
-htmlclient = ('htmlshark', '20120312', 'reallyHotSauce', {"User-Agent":_useragent, "Content-Type":"application/json", "Accept-Encoding":"gzip"}) #Contains all the information posted with the htmlshark client
-jsqueue = ['jsqueue', '20120312.08', 'circlesAndSquares']
+htmlclient = ('htmlshark', '20130520', 'nuggetsOfBaller', {"User-Agent":_useragent, "Content-Type":"application/json", "Accept-Encoding":"gzip"}) #Contains all the information posted with the htmlshark client
+jsqueue = ['jsqueue', '20130520', 'chickenFingers']
 jsqueue.append({"User-Agent":_useragent, "Referer": 'http://%s/JSQueue.swf?%s' % (URL, jsqueue[1]), "Accept-Encoding":"gzip", "Content-Type":"application/json"}) #Contains all the information specific to jsqueue
 
 #Setting the static header (country, session and uuid)
