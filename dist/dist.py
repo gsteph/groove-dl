@@ -17,6 +17,7 @@ except: pass
 shutil.copyfile("../misc/readme.txt", dir + "readme.txt")
 filename = dir.split("/")[1]
 cmdarchive = '7z a -t7z ../%s.7z *' % filename
+cmdnsis = ['C:\Program Files (x86)\NSIS\makensis.exe', '/DOUTFILE=files\groove-dl_%sall.exe' % version, '/DVERSION=%s' % version, '/DSETUPDIR=%s' % os.path.abspath(dir), 'groove-dl.nsi']
 
 if sys.platform == "win32":
     cmdmerge = 'copy /b "..\\..\\misc\\7zsd.sfx\"+..\\..\\misc\\sfxconfig.txt+groove-dl_%sall.7z %s.exe' % (version, filename)
@@ -27,10 +28,13 @@ try:
     os.chdir(dir)
     print ' '.join(cmdbuild); assert p.wait() == 0
     os.system('upx -9 *.exe *.dll modules\\*.pyd modules\\*.dll')
-    print cmdarchive; assert os.system(cmdarchive) == 0
-    os.chdir('..')
-    print os.getcwd()
-    print cmdmerge; assert os.system(cmdmerge) == 0
-    os.remove(filename + ".7z")
+    os.chdir('../..')
+    p = subprocess.Popen(cmdnsis, cwd=os.getcwd())
+    print ' '.join(cmdnsis); assert p.wait() == 0
+    #print cmdarchive; assert os.system(cmdarchive) == 0
+    #os.chdir('..')
+    #print os.getcwd()
+    #print cmdmerge; assert os.system(cmdmerge) == 0
+    #os.remove(filename + ".7z")
 except:
     print "Failed."

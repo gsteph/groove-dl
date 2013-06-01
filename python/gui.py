@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "0.97.5"
+version = "0.97.6"
 import sys
 import os
 import shutil
@@ -455,8 +455,14 @@ class t_init(threading.Thread):
         wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Downloading v%s - %%%s..." % (self.new,int(float(countBlocks*Block)/TotalSize*100))))
     def update(self):
         wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Checking for updates..."))
-        conn = httplib.HTTPConnection("www.groove-dl.co.cc")
-        conn.request("GET", "/version")
+        conn = None
+        try:
+            conn = httplib.HTTPSConnection("raw.github.com")
+            conn.request("GET", "/jacktheripper51/groove-dl/gh-pages/version")
+        except:
+            wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Checking for updates failed"))
+            time.sleep(2)
+            return
         self.new = conn.getresponse().read()
         if self.new != version:
             dlg = wx.MessageDialog(self.frame, "There is a new version available. Do you wish to update ?", "Update found", wx.YES_NO | wx.ICON_QUESTION)
