@@ -458,12 +458,14 @@ class t_init(threading.Thread):
         conn = None
         try:
             conn = httplib.HTTPSConnection("raw.github.com")
-            conn.request("GET", "/jacktheripper51/groove-dl/gh-pages/version")
+            conn.request("GET", "/jacktheripper51/groove-dl/gh-pages/versionsf")
+            r = conn.getresponse()
+            assert r.status != 404
+            self.new = r.read()
         except:
             wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Checking for updates failed"))
             time.sleep(2)
             return
-        self.new = conn.getresponse().read()
         if self.new != version:
             dlg = wx.MessageDialog(self.frame, "There is a new version available. Do you wish to update ?\ngroove-dl will close.", "Update found", wx.YES_NO | wx.ICON_QUESTION)
             if dlg.ShowModal() == wx.ID_YES:
