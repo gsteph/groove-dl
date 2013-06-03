@@ -465,21 +465,9 @@ class t_init(threading.Thread):
             return
         self.new = conn.getresponse().read()
         if self.new != version:
-            dlg = wx.MessageDialog(self.frame, "There is a new version available. Do you wish to update ?", "Update found", wx.YES_NO | wx.ICON_QUESTION)
+            dlg = wx.MessageDialog(self.frame, "There is a new version available. Do you wish to update ?\ngroove-dl will close.", "Update found", wx.YES_NO | wx.ICON_QUESTION)
             if dlg.ShowModal() == wx.ID_YES:
-                wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Downloading v%s..." % self.new))
-                filename = urlretrieve("https://github.com/downloads/jacktheripper51/groove-dl/groove-dl_%sall.exe" % self.new, reporthook=self.updatehook)[0]
-                newfile = filename+"tmp.exe"
-                o = open(newfile, "wb")
-                for l in open(filename, "rb"):                                        ### Hack to replace the extract path
-                    if "InstallPath" in l:                                            ### to the current directory
-                        l = l[:12] + '"' + os.getcwd().replace('\\', '\\\\') + '"\n'  ### because the functionality doesn't
-                    o.write(l)                                                        ### exist yet in 7zsfx through CLI
-                o.close()
-                os.rename("groove.exe", "_groove.exe")
-                os.rename("modules", "_modules")
-                os.rename("python27.dll", "_python27.dll")
-                subprocess.Popen([newfile, '-ai', '-gm2', '-y'])
+                webbrowser.open_new_tab('http://sourceforge.net/projects/groove-dl/files/groove-dl_%sall.exe/download'%self.new)
                 os._exit(0)
     def run(self):
         while(True):
