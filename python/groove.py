@@ -204,28 +204,32 @@ if __name__ == "__main__":
         exit()
     else:
         print '\n'.join(l) #Print the results
-    songid = raw_input("Enter the Song ID you wish to download or (q) to exit: ")
+    songid = raw_input("Enter the Song IDs you wish to download (separated with commas) or (q) to exit: ")
     if songid == "" or songid == "q": exit() #Exit if choice is empty or q
-    songid = eval(songid)-1 #Turn it into an int and subtract one to fit it into the list index
+    inputtedIDs=songid.split(',')
+
+    #songid = eval(songid)-1 #Turn it into an int and subtract one to fit it into the list index
     queueID = getQueueID()
-    addSongsToQueue(s[songid], queueID) #Add the song to the queue
-    print "Retrieving stream key.."
-    stream = getStreamKeyFromSongIDs(s[songid]["SongID"]) #Get the StreamKey for the selected song
-    for k,v in stream.iteritems():
-		stream=v
-    if stream == []:
-        print "Failed"
-        exit()
-    cmd = 'wget --post-data=streamKey=%s -O "%s - %s.mp3" "http://%s/stream.php"' % (stream["streamKey"], s[songid]["ArtistName"], s[songid]["SongName"], stream["ip"]) #Run wget to download the song
-    p = subprocess.Popen(cmd, shell=True)
-    markTimer = threading.Timer(30 + random.randint(0,5), markStreamKeyOver30Seconds, [s[songid]["SongID"], str(queueID), stream["ip"], stream["streamKey"]]) #Starts a timer that reports the song as being played for over 30-35 seconds. May not be needed.
-    markTimer.start()
-    try:
-        p.wait() #Wait for wget to finish
-    except KeyboardInterrupt: #If we are interrupted by the user
-        os.remove('%s - %s.mp3' % (s[songid]["ArtistName"], s[songid]["SongName"])) #Delete the song
-        print "\nDownload cancelled. File deleted."
-    markTimer.cancel()
-    print "Marking song as completed"
-    markSongDownloadedEx(stream["ip"], s[songid]["SongID"], stream["streamKey"]) #This is the important part, hopefully this will stop grooveshark from banning us.
-    #Natural Exit
+    for curID in inputtedIDs:
+        songid=eval(curID)-1
+        addSongsToQueue(s[songid], queueID) #Add the song to the queue
+        print "Retrieving stream key.."
+        stream = getStreamKeyFromSongIDs(s[songid]["SongID"]) #Get the StreamKey for the selected song
+        for k,v in stream.iteritems():
+            stream=v
+        if stream == []:
+            print "Failed"
+            exit()
+        cmd = 'wget --post-data=streamKey=%s -O "%s - %s.mp3" "http://%s/stream.php"' % (stream["streamKey"], s[songid]["ArtistName"], s[songid]["SongName"], stream["ip"]) #Run wget to download the song
+        p = subprocess.Popen(cmd, shell=True)
+        markTimer = threading.Timer(30 + random.randint(0,5), markStreamKeyOver30Seconds, [s[songid]["SongID"], str(queueID), stream["ip"], stream["streamKey"]]) #Starts a timer that reports the song as being played for over 30-35 seconds. May not be needed.
+        markTimer.start()
+        try:
+            p.wait() #Wait for wget to finish
+        except KeyboardInterrupt: #If we are interrupted by the user
+            os.remove('%s - %s.mp3' % (s[songid]["ArtistName"], s[songid]["SongName"])) #Delete the song
+            print "\nDownload cancelled. File deleted."
+        markTimer.cancel()
+        print "Marking song as completed"
+        markSongDownloadedEx(stream["ip"], s[songid]["SongID"], stream["streamKey"]) #This is the important part, hopefully this will stop grooveshark from banning us.
+        #Natural Exit
