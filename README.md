@@ -4,10 +4,12 @@ A downloader to Grooveshark's awesome music library. Based off of the [wiki here
 
 ###Syntax:
 CLI: ```groove.py 'query'```
+
 GUI: ```groove.py```
 
 ###Dependencies:
 * Python 2.6
+
 For GUI:
 * [wxPython](http://www.wxpython.org)
 * [ObjectListView](http://objectlistview.sourceforge.net/python)
