@@ -1,4 +1,4 @@
-JTR's Grooveshark Downloader
+groove-dl
 ----------------------------
 A downloader to Grooveshark's awesome music library. Based off of the [wiki here](http://nettech.wikia.com/wiki/Grooveshark_Internal_API). For now, only a python version with optional GUI is available.
 
@@ -29,4 +29,4 @@ There's a PHP port by Check over at https://github.com/check/groove-php
 ###Disclaimer:
 I'm not responsible for any violations this script does to Grooveshark's TOS. It's more of a proof of concept.
 
-Python script by [George Stephanos](gaf.stephanos@gmail.com)
+Python script by George Stephanos <gaf.stephanos@gmail.com>
