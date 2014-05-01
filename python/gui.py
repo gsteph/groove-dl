@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "0.97.7"
+version = "0.97.8"
 import sys
 import os
 import shutil
@@ -303,13 +303,11 @@ class MyFrame(wx.Frame):
         if l > 0: 
             if wx.MessageDialog(self, "There are currently %d active downloads. Are you sure you want to cancel them and exit ?" % l, "Active downloads", wx.YES_NO|wx.CENTRE).ShowModal() == wx.ID_NO:
                 return
-        print "BWAH"
         for d in self.downloads:
             d["thread"].cancelled = True
         config = ConfigParser.RawConfigParser()
         config.add_section("groove-dl")
         config.set("groove-dl", "dest", dest)
-        print "BWAH"
         config.set("groove-dl", "format", format)
         config.write(open(os.path.join(conf, "settings.ini"), "wb"))
         sys.stdout.close()
@@ -457,10 +455,10 @@ class t_init(threading.Thread):
         wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Checking for updates..."))
         conn = None
         try:
-            conn = httplib.HTTPSConnection("raw.github.com")
+            conn = httplib.HTTPSConnection("raw.githubusercontent.com")
             conn.request("GET", "/jacktheripper51/groove-dl/gh-pages/versionsf")
             r = conn.getresponse()
-            assert r.status != 404
+            assert r.status == 200
             self.new = r.read()
         except:
             wx.PostEvent(self.frame, evtExecFunc(func=SetStatus, attr1="Checking for updates failed"))
