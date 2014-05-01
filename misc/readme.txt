@@ -11,5 +11,5 @@ If you want to change the destination directory, click "Choose Destination".
 
 Enjoy :)
 
-Downloaded from https://github.com/jacktheripper51/groove-dl
+Downloaded from https://github.com/gsteph/groove-dl
 By George Stephanos <gaf.stephanos@gmail.com>
