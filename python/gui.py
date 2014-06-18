@@ -247,10 +247,11 @@ class MyFrame(wx.Frame):
                 filename = filename.replace('title', strip(song[name], "<>:\"/\|?*"))
                 filename = filename.replace('album', strip(song["AlbumName"], "<>:\"/\|?*"))
                 c = 2
-                while os.path.exists(os.path.join(dest, filename+'.mp3')):
-                    filename = filename + ' (%d)' % c
+                fn = filename
+                while os.path.exists(os.path.join(dest, fn+'.mp3')) or fn+'.mp3' in [i['filename'] for i in self.downloads]:
+                    fn = filename + ' (%d)' % c
                     c += 1
-                filename += '.mp3'
+                filename = fn + '.mp3'
                 t = t_download(self, song)
                 t.download = {"progress":"Initializing", "thread":t, "filename":filename, "album":song["AlbumName"]}
                 self.downloads.append(t.download)
